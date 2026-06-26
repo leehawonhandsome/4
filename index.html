@@ -1,0 +1,1318 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <title>Stack Rush - 한 방향 타겟</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        html, body {
+            width: 100%;
+            height: 100%;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #0a0e27 0%, #1a1f3a 100%);
+            color: #fff;
+            overflow: hidden;
+            touch-action: manipulation;
+        }
+
+        body {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            position: fixed;
+        }
+
+        .game-wrapper {
+            width: 100%;
+            height: 100%;
+            max-width: 100vw;
+            max-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            position: relative;
+        }
+
+        /* ========== 이름 입력 모달 ========== */
+        #nameModal {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(10, 14, 39, 0.98);
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            z-index: 2000;
+            backdrop-filter: blur(10px);
+        }
+
+        #nameModal.hidden {
+            display: none;
+        }
+
+        .modal-content {
+            text-align: center;
+            animation: slideUp 0.5s cubic-bezier(0.34, 1.56, 0.64, 1);
+            padding: 20px;
+            max-width: 90%;
+        }
+
+        @keyframes slideUp {
+            from {
+                opacity: 0;
+                transform: translateY(60px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .modal-content h1 {
+            font-size: clamp(2.5rem, 12vw, 4rem);
+            margin-bottom: 15px;
+            background: linear-gradient(90deg, #00ffff, #ff00ff, #00ffff);
+            background-size: 200% 200%;
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            animation: gradientFlow 3s ease infinite;
+            font-weight: 900;
+            letter-spacing: 2px;
+            text-shadow: 0 0 30px rgba(0, 255, 255, 0.3);
+        }
+
+        @keyframes gradientFlow {
+            0%, 100% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+        }
+
+        .modal-content p {
+            font-size: 1.1rem;
+            color: #aaa;
+            margin-bottom: 30px;
+            letter-spacing: 1px;
+        }
+
+        #playerNameInput {
+            width: 85%;
+            max-width: 300px;
+            padding: 16px 20px;
+            font-size: 1.1rem;
+            border: 2px solid #00ffff;
+            border-radius: 12px;
+            background: rgba(0, 255, 255, 0.08);
+            color: #fff;
+            text-align: center;
+            margin-bottom: 30px;
+            transition: all 0.3s ease;
+            box-shadow: 0 0 15px rgba(0, 255, 255, 0.1);
+        }
+
+        #playerNameInput:focus {
+            outline: none;
+            border-color: #ff00ff;
+            background: rgba(255, 0, 255, 0.1);
+            box-shadow: 0 0 25px rgba(255, 0, 255, 0.4);
+        }
+
+        .modal-buttons {
+            display: flex;
+            gap: 12px;
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+
+        .btn-start, .btn-ranking {
+            padding: 14px 35px;
+            font-size: 1rem;
+            font-weight: bold;
+            background: linear-gradient(90deg, #00ffff, #ff00ff);
+            color: #000;
+            border: none;
+            border-radius: 10px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 0 20px rgba(0, 255, 255, 0.5);
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .btn-start:hover, .btn-ranking:hover {
+            transform: scale(1.1);
+            box-shadow: 0 0 35px rgba(255, 0, 255, 0.7);
+        }
+
+        .btn-start:active, .btn-ranking:active {
+            transform: scale(0.95);
+        }
+
+        .mini-ranking {
+            width: 100%;
+            max-width: 320px;
+            margin-top: 35px;
+            padding: 20px;
+            background: rgba(0, 255, 255, 0.05);
+            border: 2px solid rgba(0, 255, 255, 0.2);
+            border-radius: 12px;
+            max-height: 180px;
+            overflow-y: auto;
+        }
+
+        .mini-ranking h3 {
+            color: #00ffff;
+            margin-bottom: 12px;
+            font-size: 0.9rem;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .rank-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 8px 0;
+            border-bottom: 1px solid rgba(0, 255, 255, 0.1);
+            font-size: 0.95rem;
+        }
+
+        .rank-item:last-child {
+            border-bottom: none;
+        }
+
+        .rank-num {
+            color: #ff00ff;
+            font-weight: bold;
+            width: 30px;
+        }
+
+        .rank-name {
+            flex: 1;
+            margin: 0 10px;
+            text-align: left;
+        }
+
+        .rank-score {
+            color: #00ffff;
+            font-weight: bold;
+        }
+
+        /* ========== 랭킹 화면 ========== */
+        #rankingScreen {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(10, 14, 39, 0.98);
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            z-index: 1999;
+            backdrop-filter: blur(10px);
+            padding: 20px;
+        }
+
+        #rankingScreen.hidden {
+            display: none;
+        }
+
+        .ranking-box {
+            text-align: center;
+            animation: slideUp 0.5s cubic-bezier(0.34, 1.56, 0.64, 1);
+            width: 100%;
+            max-width: 400px;
+        }
+
+        .ranking-box h1 {
+            font-size: 2.8rem;
+            margin-bottom: 30px;
+            color: #00ffff;
+            text-shadow: 0 0 20px rgba(0, 255, 255, 0.8);
+            letter-spacing: 2px;
+        }
+
+        .full-ranking {
+            background: rgba(0, 255, 255, 0.05);
+            border: 2px solid rgba(0, 255, 255, 0.2);
+            border-radius: 12px;
+            padding: 25px 20px;
+            max-height: 55vh;
+            overflow-y: auto;
+            margin-bottom: 25px;
+        }
+
+        .full-ranking .rank-item {
+            padding: 12px 0;
+            font-size: 1rem;
+        }
+
+        .btn-back {
+            padding: 14px 40px;
+            font-size: 1rem;
+            font-weight: bold;
+            background: linear-gradient(90deg, #ff00ff, #00ffff);
+            color: #000;
+            border: none;
+            border-radius: 10px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 0 20px rgba(255, 0, 110, 0.5);
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .btn-back:hover {
+            transform: scale(1.1);
+            box-shadow: 0 0 35px rgba(0, 255, 255, 0.7);
+        }
+
+        .btn-back:active {
+            transform: scale(0.95);
+        }
+
+        /* ========== 게임 화면 ========== */
+        #gameScreen {
+            width: 100%;
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+            background: linear-gradient(180deg, rgba(0, 20, 40, 0.6) 0%, rgba(0, 10, 20, 0.8) 100%);
+        }
+
+        #gameScreen.hidden {
+            display: none;
+        }
+
+        .game-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 15px 20px;
+            border-bottom: 2px solid rgba(0, 255, 255, 0.2);
+            background: rgba(0, 0, 0, 0.3);
+            flex-shrink: 0;
+        }
+
+        .player-info {
+            font-size: 1rem;
+            color: #00ffff;
+            font-weight: bold;
+            letter-spacing: 1px;
+        }
+
+        .level-display {
+            font-size: 2rem;
+            font-weight: 900;
+            color: #ff00ff;
+            text-shadow: 0 0 20px rgba(255, 0, 255, 0.7);
+            animation: pulse 1s ease-in-out infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.1); }
+        }
+
+        .btn-menu {
+            padding: 10px 20px;
+            font-size: 0.95rem;
+            background: rgba(255, 0, 102, 0.8);
+            color: #fff;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-weight: bold;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .btn-menu:active {
+            transform: scale(0.95);
+        }
+
+        .game-canvas {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            justify-content: flex-end;
+            align-items: center;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .stack-viewport {
+            position: relative;
+            width: 100%;
+            height: 100%;
+            display: flex;
+            flex-direction: column-reverse;
+            justify-content: flex-start;
+            align-items: center;
+            padding: 20px 0;
+            overflow-y: auto;
+            overflow-x: hidden;
+            scroll-behavior: smooth;
+        }
+
+        .block-row {
+            position: relative;
+            width: 100%;
+            height: 40px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            flex-shrink: 0;
+        }
+
+        .block {
+            position: absolute;
+            height: 100%;
+            background: linear-gradient(90deg, #00ffff, #ff00ff);
+            border-radius: 8px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-weight: 900;
+            font-size: 0.85rem;
+            color: #000;
+            box-shadow: 0 0 20px rgba(0, 255, 255, 0.6);
+            transition: none;
+            letter-spacing: 1px;
+        }
+
+        .block.moving {
+            animation: slideLeft var(--duration, 3s) linear forwards;
+        }
+
+        @keyframes slideLeft {
+            from {
+                left: 100%;
+            }
+            to {
+                left: -10%;
+            }
+        }
+
+        .block.stopped {
+            animation: none !important;
+        }
+
+        .block.perfect {
+            animation: perfectFlash 0.4s ease !important;
+        }
+
+        @keyframes perfectFlash {
+            0% { box-shadow: 0 0 20px rgba(0, 255, 255, 0.6); }
+            50% { box-shadow: 0 0 50px rgba(0, 255, 255, 1), inset 0 0 20px rgba(0, 255, 255, 0.5); }
+            100% { box-shadow: 0 0 20px rgba(0, 255, 255, 0.6); }
+        }
+
+        .block.cutting {
+            animation: cuttingAnimation 0.4s ease !important;
+        }
+
+        @keyframes cuttingAnimation {
+            0% { 
+                box-shadow: 0 0 20px rgba(255, 0, 255, 0.6);
+                filter: brightness(1);
+            }
+            50% { 
+                box-shadow: 0 0 50px rgba(255, 200, 0, 1);
+                filter: brightness(1.3);
+            }
+            100% { 
+                box-shadow: 0 0 20px rgba(0, 255, 255, 0.6);
+                filter: brightness(1);
+            }
+        }
+
+        .block.gameover {
+            animation: gameOverShake 0.6s ease !important;
+        }
+
+        @keyframes gameOverShake {
+            0%, 100% { transform: translateX(0) rotateZ(0deg); }
+            10% { transform: translateX(-15px) rotateZ(-8deg); }
+            20% { transform: translateX(15px) rotateZ(8deg); }
+            30% { transform: translateX(-15px) rotateZ(-8deg); }
+            40% { transform: translateX(15px) rotateZ(8deg); }
+            50% { transform: translateX(-10px) rotateZ(-5deg); }
+            60% { transform: translateX(10px) rotateZ(5deg); }
+            70% { transform: translateX(-5px) rotateZ(-2deg); }
+            80% { transform: translateX(5px) rotateZ(2deg); }
+        }
+
+        .judgment {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            font-size: 3.5rem;
+            font-weight: 900;
+            z-index: 800;
+            pointer-events: none;
+            text-shadow: 0 0 30px;
+            letter-spacing: 2px;
+        }
+
+        .judgment.perfect {
+            color: #00ffff;
+            text-shadow: 0 0 40px rgba(0, 255, 255, 1);
+            animation: judgmentPerfect 0.8s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+        }
+
+        .judgment.cutting {
+            color: #ffaa00;
+            text-shadow: 0 0 40px rgba(255, 170, 0, 1);
+            animation: judgmentCutting 0.8s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+        }
+
+        .judgment.miss {
+            color: #ff0066;
+            text-shadow: 0 0 40px rgba(255, 0, 102, 1);
+            animation: judgmentMiss 0.8s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+        }
+
+        @keyframes judgmentPerfect {
+            0% {
+                opacity: 1;
+                transform: translate(-50%, -50%) scale(0.3) rotateZ(-20deg);
+            }
+            50% {
+                opacity: 1;
+                transform: translate(-50%, -50%) scale(1.3) rotateZ(10deg);
+            }
+            100% {
+                opacity: 0;
+                transform: translate(-50%, -200%) scale(1) rotateZ(0deg);
+            }
+        }
+
+        @keyframes judgmentCutting {
+            0% {
+                opacity: 1;
+                transform: translate(-50%, -50%) scale(0.2) rotateZ(20deg);
+            }
+            60% {
+                opacity: 1;
+                transform: translate(-50%, -50%) scale(1.2) rotateZ(-15deg);
+            }
+            100% {
+                opacity: 0;
+                transform: translate(-50%, -180%) scale(0.8) rotateZ(5deg);
+            }
+        }
+
+        @keyframes judgmentMiss {
+            0% {
+                opacity: 1;
+                transform: translate(-50%, -50%) scale(1);
+            }
+            50% {
+                opacity: 1;
+                transform: translate(-50%, -50%) scale(1.2) rotateZ(-10deg);
+            }
+            100% {
+                opacity: 0;
+                transform: translate(-50%, -120%) scale(0.5) rotateZ(20deg);
+            }
+        }
+
+        .screen-flash {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: 700;
+            animation: flashPulse 0.25s ease-out;
+        }
+
+        @keyframes flashPulse {
+            0% { opacity: 1; }
+            100% { opacity: 0; }
+        }
+
+        /* ========== 게임 오버 화면 ========== */
+        #gameOverScreen {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(10, 14, 39, 0.98);
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            z-index: 1998;
+            backdrop-filter: blur(10px);
+            padding: 20px;
+            overflow-y: auto;
+        }
+
+        #gameOverScreen.hidden {
+            display: none;
+        }
+
+        .gameover-box {
+            text-align: center;
+            animation: slideUp 0.6s cubic-bezier(0.34, 1.56, 0.64, 1);
+            width: 100%;
+            max-width: 420px;
+        }
+
+        .gameover-text {
+            font-size: 4rem;
+            color: #ff0066;
+            margin-bottom: 15px;
+            animation: bounceDown 0.6s cubic-bezier(0.34, 1.56, 0.64, 1);
+            letter-spacing: 2px;
+        }
+
+        @keyframes bounceDown {
+            0% {
+                opacity: 0;
+                transform: translateY(-60px) scale(0.5);
+            }
+            100% {
+                opacity: 1;
+                transform: translateY(0) scale(1);
+            }
+        }
+
+        .final-score {
+            font-size: clamp(3.5rem, 15vw, 5rem);
+            font-weight: 900;
+            color: #00ffff;
+            margin: 10px 0;
+            text-shadow: 0 0 50px rgba(0, 255, 255, 0.9);
+            animation: scorePopup 0.6s cubic-bezier(0.34, 1.56, 0.64, 1);
+        }
+
+        @keyframes scorePopup {
+            0% {
+                transform: scale(0.3);
+                opacity: 0;
+            }
+            100% {
+                transform: scale(1);
+                opacity: 1;
+            }
+        }
+
+        .score-label {
+            font-size: 1.2rem;
+            color: #aaa;
+            margin-bottom: 25px;
+            letter-spacing: 1px;
+        }
+
+        .record-badge {
+            padding: 18px;
+            margin-bottom: 30px;
+            border-radius: 12px;
+            font-size: 1.1rem;
+            font-weight: bold;
+            min-height: 70px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            letter-spacing: 0.5px;
+        }
+
+        .record-badge.new {
+            background: rgba(0, 255, 255, 0.1);
+            border: 2px solid #00ffff;
+            color: #00ffff;
+            text-shadow: 0 0 20px rgba(0, 255, 255, 0.7);
+        }
+
+        .record-badge.old {
+            background: rgba(255, 0, 102, 0.1);
+            border: 2px solid rgba(255, 0, 102, 0.5);
+            color: #ff6699;
+        }
+
+        .gameover-ranking {
+            background: rgba(0, 255, 255, 0.05);
+            border: 2px solid rgba(0, 255, 255, 0.2);
+            border-radius: 12px;
+            padding: 20px;
+            margin-bottom: 30px;
+            max-height: 240px;
+            overflow-y: auto;
+        }
+
+        .gameover-ranking h3 {
+            color: #00ffff;
+            margin-bottom: 15px;
+            font-size: 0.9rem;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .gameover-ranking .rank-item.current {
+            background: rgba(0, 255, 255, 0.15);
+            padding: 10px;
+            border-radius: 8px;
+            border: 1px solid #00ffff;
+        }
+
+        .gameover-buttons {
+            display: flex;
+            gap: 12px;
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+
+        .btn-restart, .btn-home {
+            padding: 14px 35px;
+            font-size: 1rem;
+            font-weight: bold;
+            background: linear-gradient(90deg, #00ffff, #ff00ff);
+            color: #000;
+            border: none;
+            border-radius: 10px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 0 20px rgba(0, 255, 255, 0.5);
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .btn-restart:hover, .btn-home:hover {
+            transform: scale(1.1);
+            box-shadow: 0 0 35px rgba(255, 0, 255, 0.7);
+        }
+
+        .btn-restart:active, .btn-home:active {
+            transform: scale(0.95);
+        }
+
+        ::-webkit-scrollbar {
+            width: 6px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: rgba(0, 255, 255, 0.05);
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: rgba(0, 255, 255, 0.3);
+            border-radius: 3px;
+        }
+
+        ::-webkit-scrollbar-thumb:hover {
+            background: rgba(0, 255, 255, 0.5);
+        }
+
+        @media (max-width: 480px) {
+            .modal-content h1 {
+                font-size: 2.2rem;
+            }
+
+            .gameover-text {
+                font-size: 3rem;
+            }
+
+            .judgment {
+                font-size: 2.5rem;
+            }
+
+            .block {
+                font-size: 0.7rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="game-wrapper">
+        <!-- 이름 입력 모달 -->
+        <div id="nameModal">
+            <div class="modal-content">
+                <h1>STACK RUSH</h1>
+                <p>한 방향 타겟 퍼즐</p>
+                <input 
+                    type="text" 
+                    id="playerNameInput" 
+                    placeholder="닉네임 입력" 
+                    maxlength="12"
+                    autocomplete="off"
+                >
+                <div class="modal-buttons">
+                    <button class="btn-start" id="btnStart">시작</button>
+                    <button class="btn-ranking" id="btnShowRanking">랭킹</button>
+                </div>
+                <div class="mini-ranking" id="miniRanking"></div>
+            </div>
+        </div>
+
+        <!-- 랭킹 화면 -->
+        <div id="rankingScreen" class="hidden">
+            <div class="ranking-box">
+                <h1>🏆 TOP 10 🏆</h1>
+                <div class="full-ranking" id="fullRankingList"></div>
+                <button class="btn-back" id="btnBackFromRanking">돌아가기</button>
+            </div>
+        </div>
+
+        <!-- 게임 화면 -->
+        <div id="gameScreen" class="hidden">
+            <div class="game-header">
+                <div class="player-info" id="playerInfo"></div>
+                <div class="level-display" id="levelDisplay">1</div>
+                <button class="btn-menu" id="btnGameMenu">메뉴</button>
+            </div>
+            <div class="game-canvas">
+                <div class="stack-viewport" id="stackViewport"></div>
+            </div>
+        </div>
+
+        <!-- 게임 오버 화면 -->
+        <div id="gameOverScreen" class="hidden">
+            <div class="gameover-box">
+                <div class="gameover-text">🎮 게임 오버</div>
+                <div class="final-score" id="finalScore">0</div>
+                <div class="score-label">층에 도달했습니다!</div>
+                <div class="record-badge" id="recordBadge"></div>
+                <div class="gameover-ranking">
+                    <h3>🏆 현재 랭킹</h3>
+                    <div id="gameoverRankingList"></div>
+                </div>
+                <div class="gameover-buttons">
+                    <button class="btn-restart" id="btnRestart">다시 시작</button>
+                    <button class="btn-home" id="btnHome">메뉴로</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // ========== 블록 데이터 구조 ==========
+        class Block {
+            constructor(left, width, level) {
+                this.left = left;
+                this.width = width;
+                this.level = level;
+            }
+
+            get right() {
+                return this.left + this.width;
+            }
+
+            get center() {
+                return this.left + this.width / 2;
+            }
+        }
+
+        // ========== 게임 상태 ==========
+        const gameState = {
+            playerName: '',
+            level: 1,
+            isPlaying: false,
+            gameStarted: false,
+            rankings: [],
+            stackedBlocks: [],
+            currentBlock: null,
+            currentBlockElement: null,
+            blockDuration: 3,
+            animationId: null,
+            blockStartTime: null,
+            canvasWidth: 0,
+            blockStartPosition: 100,
+            hasClicked: false,
+            minBlockWidth: 0.5 // 최소 블록 너비를 0.5%로 설정 (거의 보이지 않지만 존재)
+        };
+
+        // ========== DOM 요소 ==========
+        const elements = {
+            nameModal: document.getElementById('nameModal'),
+            rankingScreen: document.getElementById('rankingScreen'),
+            gameScreen: document.getElementById('gameScreen'),
+            gameOverScreen: document.getElementById('gameOverScreen'),
+            playerNameInput: document.getElementById('playerNameInput'),
+            btnStart: document.getElementById('btnStart'),
+            btnShowRanking: document.getElementById('btnShowRanking'),
+            btnBackFromRanking: document.getElementById('btnBackFromRanking'),
+            btnGameMenu: document.getElementById('btnGameMenu'),
+            btnRestart: document.getElementById('btnRestart'),
+            btnHome: document.getElementById('btnHome'),
+            playerInfo: document.getElementById('playerInfo'),
+            levelDisplay: document.getElementById('levelDisplay'),
+            stackViewport: document.getElementById('stackViewport'),
+            miniRanking: document.getElementById('miniRanking'),
+            fullRankingList: document.getElementById('fullRankingList'),
+            gameoverRankingList: document.getElementById('gameoverRankingList'),
+            finalScore: document.getElementById('finalScore'),
+            recordBadge: document.getElementById('recordBadge')
+        };
+
+        // ========== 로컬 스토리지 ==========
+        function loadRankings() {
+            const saved = localStorage.getItem('stackRushRankings');
+            gameState.rankings = saved ? JSON.parse(saved) : [];
+        }
+
+        function saveRankings() {
+            localStorage.setItem('stackRushRankings', JSON.stringify(gameState.rankings));
+        }
+
+        function updateRanking(playerName, score) {
+            const idx = gameState.rankings.findIndex(r => r.name === playerName);
+            if (idx !== -1) {
+                if (score > gameState.rankings[idx].score) {
+                    gameState.rankings[idx].score = score;
+                }
+            } else {
+                gameState.rankings.push({ name: playerName, score });
+            }
+            gameState.rankings.sort((a, b) => b.score - a.score);
+            saveRankings();
+        }
+
+        function displayRankings(containerId, limit = 10) {
+            const container = document.getElementById(containerId);
+            container.innerHTML = '';
+            const items = gameState.rankings.slice(0, limit);
+            
+            if (items.length === 0) {
+                container.innerHTML = '<div style="padding: 20px; color: #aaa;">아직 기록이 없습니다</div>';
+                return;
+            }
+
+            items.forEach((ranking, idx) => {
+                const item = document.createElement('div');
+                item.className = 'rank-item';
+                item.innerHTML = `
+                    <span class="rank-num">#${idx + 1}</span>
+                    <span class="rank-name">${ranking.name}</span>
+                    <span class="rank-score">${ranking.score}</span>
+                `;
+                container.appendChild(item);
+            });
+        }
+
+        // ========== 네비게이션 ==========
+        function showHome() {
+            elements.nameModal.classList.remove('hidden');
+            elements.gameScreen.classList.add('hidden');
+            elements.gameOverScreen.classList.add('hidden');
+            elements.rankingScreen.classList.add('hidden');
+            if (gameState.animationId) cancelAnimationFrame(gameState.animationId);
+            displayRankings('miniRanking', 5);
+        }
+
+        function startGame() {
+            const name = elements.playerNameInput.value.trim();
+            if (!name) {
+                alert('이름을 입력해주세요!');
+                return;
+            }
+            gameState.playerName = name;
+            elements.nameModal.classList.add('hidden');
+            elements.gameScreen.classList.remove('hidden');
+            elements.playerInfo.textContent = `${gameState.playerName}`;
+            initGame();
+        }
+
+        function showRanking() {
+            elements.nameModal.classList.add('hidden');
+            elements.rankingScreen.classList.remove('hidden');
+            displayRankings('fullRankingList', 10);
+        }
+
+        // ========== 버튼 이벤트 ==========
+        elements.btnStart.addEventListener('click', startGame);
+        elements.btnShowRanking.addEventListener('click', showRanking);
+        elements.btnBackFromRanking.addEventListener('click', showHome);
+        elements.btnGameMenu.addEventListener('click', () => {
+            if (gameState.isPlaying) {
+                if (confirm('게임을 포기하시겠습니까?')) {
+                    showHome();
+                }
+            } else {
+                showHome();
+            }
+        });
+        elements.btnRestart.addEventListener('click', () => {
+            elements.gameOverScreen.classList.add('hidden');
+            elements.gameScreen.classList.remove('hidden');
+            initGame();
+        });
+        elements.btnHome.addEventListener('click', showHome);
+
+        elements.playerNameInput.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter' && elements.playerNameInput.value.trim()) {
+                startGame();
+            }
+        });
+
+        // ========== 게임 초기화 ==========
+        function initGame() {
+            gameState.level = 1;
+            gameState.isPlaying = false;
+            gameState.gameStarted = true;
+            gameState.stackedBlocks = [];
+            gameState.hasClicked = false;
+            elements.levelDisplay.textContent = '1';
+            elements.stackViewport.innerHTML = '';
+
+            gameState.canvasWidth = elements.stackViewport.offsetWidth;
+
+            const firstBlock = new Block(0, 100, 1);
+            gameState.stackedBlocks.push(firstBlock);
+            renderBlock(firstBlock, 1, false);
+
+            setTimeout(() => {
+                gameState.level = 2;
+                elements.levelDisplay.textContent = '2';
+                startNewBlock();
+            }, 600);
+        }
+
+        // ========== 뷰포트 자동 스크롤 함수 ==========
+        function autoScrollViewport() {
+            const viewport = elements.stackViewport;
+            const targetScroll = Math.max(0, viewport.scrollHeight - viewport.clientHeight - 100);
+            
+            viewport.scrollTo({
+                top: targetScroll,
+                behavior: 'smooth'
+            });
+        }
+
+        // ========== 블록 렌더링 ==========
+        function renderBlock(block, level, isMoving) {
+            const row = document.createElement('div');
+            row.className = 'block-row';
+            row.setAttribute('data-level', level);
+
+            const blockEl = document.createElement('div');
+            blockEl.className = 'block' + (isMoving ? ' moving' : '');
+            blockEl.textContent = level;
+
+            const widthPercent = block.width;
+            const widthPx = (widthPercent / 100) * gameState.canvasWidth;
+            blockEl.style.width = widthPx + 'px';
+
+            if (isMoving) {
+                blockEl.style.setProperty('--duration', gameState.blockDuration + 's');
+                blockEl.style.setProperty('--width', widthPx + 'px');
+            } else {
+                const leftPercent = (block.left / 100) * gameState.canvasWidth;
+                blockEl.style.left = leftPercent + 'px';
+            }
+
+            row.appendChild(blockEl);
+            elements.stackViewport.appendChild(row);
+
+            return { row, blockEl };
+        }
+
+        // ========== 새 블록 시작 ==========
+        function startNewBlock() {
+            const prevBlock = gameState.stackedBlocks[gameState.stackedBlocks.length - 1];
+            const newWidth = prevBlock.width;
+
+            gameState.currentBlock = new Block(0, newWidth, gameState.level);
+            gameState.blockDuration = Math.max(1.5, 3 - (gameState.level - 2) * 0.1);
+            gameState.blockStartPosition = 100;
+            gameState.hasClicked = false;
+
+            const { blockEl } = renderBlock(gameState.currentBlock, gameState.level, true);
+            gameState.currentBlockElement = blockEl;
+
+            gameState.isPlaying = true;
+            gameState.blockStartTime = performance.now();
+
+            animateBlock();
+        }
+
+        function animateBlock() {
+            if (!gameState.isPlaying || !gameState.currentBlockElement) return;
+
+            const elapsed = (performance.now() - gameState.blockStartTime) / 1000;
+            const progress = elapsed / gameState.blockDuration;
+
+            // 클릭이 없었으면 계속 실행 (허공에 떨어지지 않음)
+            if (progress >= 1 && gameState.hasClicked) {
+                handleMissed();
+                return;
+            }
+
+            gameState.animationId = requestAnimationFrame(animateBlock);
+        }
+
+        // ========== 초정밀 클릭 위치 계산 로직 ==========
+        function calculatePreciseBlockPosition(clickTime) {
+            const totalDuration = gameState.blockDuration;
+            const elapsedSinceStart = (clickTime - gameState.blockStartTime) / 1000;
+            
+            if (elapsedSinceStart >= totalDuration) {
+                return 110;
+            }
+
+            const totalDistance = 110;
+            const traveledDistance = (elapsedSinceStart / totalDuration) * totalDistance;
+            const currentPosition = 100 - traveledDistance;
+
+            return Math.max(-10, Math.min(100, currentPosition));
+        }
+
+        // ========== 수학적 커팅 함수 (핵심) ==========
+        function performPrecisionCutting(currentLeftPercent, currentWidthPercent, bottomBlock) {
+            // 변수 정의
+            const bottomLeft = bottomBlock.left;
+            const bottomWidth = bottomBlock.width;
+            const bottomRight = bottomLeft + bottomWidth;
+            const currentLeft = currentLeftPercent;
+            const currentRight = currentLeft + currentWidthPercent;
+
+            // 초기 상태: 현재 블록이 아래층과 겹치는지 확인
+            const overlapLeft = Math.max(currentLeft, bottomLeft);
+            const overlapRight = Math.min(currentRight, bottomRight);
+            const overlapWidth = overlapRight - overlapLeft;
+
+            // 겹침이 없으면 즉시 반환
+            if (overlapWidth <= 0) {
+                return null;
+            }
+
+            // 새로운 블록의 크기와 위치 계산 시작
+            let newWidth = currentWidthPercent;
+            let newLeft = currentLeft;
+
+            // 왼쪽으로 삐져나간 부분 처리
+            if (currentLeft < bottomLeft) {
+                const leftOver = bottomLeft - currentLeft;
+                newWidth = newWidth - leftOver;
+                newLeft = bottomLeft;
+            }
+
+            // 오른쪽으로 삐져나간 부분 처리
+            if (currentRight > bottomRight) {
+                const rightOver = currentRight - bottomRight;
+                newWidth = newWidth - rightOver;
+            }
+
+            // 최소 너비 체크 (0.5% 이하면 게임 오버)
+            if (newWidth <= gameState.minBlockWidth) {
+                return null;
+            }
+
+            return {
+                left: newLeft,
+                width: newWidth
+            };
+        }
+
+        // ========== 터치/클릭 판정 ==========
+        function judgeBlock(inputTime) {
+            if (!gameState.gameStarted) return;
+
+            gameState.hasClicked = true;
+
+            // 클릭했을 때 아직 게임이 진행중이지 않으면 무시
+            if (!gameState.isPlaying || !gameState.currentBlock) return;
+
+            gameState.isPlaying = false;
+            if (gameState.animationId) cancelAnimationFrame(gameState.animationId);
+
+            // 초정밀 위치 계산
+            const precisePosition = calculatePreciseBlockPosition(inputTime);
+
+            // 블록이 화면을 벗어나면 즉시 미스 처리
+            if (precisePosition >= 100 || precisePosition <= -10) {
+                handleMissed();
+                return;
+            }
+
+            // 현재 멈춘 블록의 위치와 크기 설정
+            gameState.currentBlock.left = precisePosition;
+
+            // 아래층 블록 가져오기
+            const prevBlock = gameState.stackedBlocks[gameState.stackedBlocks.length - 1];
+
+            // 수학적 커팅 함수 호출
+            const cuttingResult = performPrecisionCutting(
+                gameState.currentBlock.left,
+                gameState.currentBlock.width,
+                prevBlock
+            );
+
+            // 커팅 결과가 없으면 (완전히 벗어나거나 크기가 0.5% 이하면) 미스
+            if (cuttingResult === null) {
+                const leftPx = (precisePosition / 100) * gameState.canvasWidth;
+                gameState.currentBlockElement.style.left = leftPx + 'px';
+                gameState.currentBlockElement.classList.add('stopped');
+                gameState.currentBlockElement.classList.remove('moving');
+                handleMissed();
+                return;
+            }
+
+            // 커팅된 블록의 새로운 너비와 위치 적용
+            gameState.currentBlock.left = cuttingResult.left;
+            gameState.currentBlock.width = cuttingResult.width;
+
+            // DOM 업데이트: 블록의 새로운 위치와 크기 반영
+            const leftPx = (cuttingResult.left / 100) * gameState.canvasWidth;
+            const widthPx = (cuttingResult.width / 100) * gameState.canvasWidth;
+            gameState.currentBlockElement.style.left = leftPx + 'px';
+            gameState.currentBlockElement.style.width = widthPx + 'px';
+            gameState.currentBlockElement.classList.add('stopped');
+            gameState.currentBlockElement.classList.remove('moving');
+
+            // PERFECT 판정 (완벽하게 일치)
+            if (Math.abs(gameState.currentBlock.left - prevBlock.left) <= 1.5 &&
+                Math.abs(gameState.currentBlock.right - prevBlock.right) <= 1.5) {
+                handlePerfect(gameState.currentBlock);
+            } else {
+                // CUTTING 판정 (부분 잘림)
+                handleCutting(gameState.currentBlock);
+            }
+        }
+
+        function handlePerfect(block) {
+            showJudgment('⚡ PERFECT!', 'perfect');
+            gameState.currentBlockElement.classList.add('perfect');
+            flashScreen('rgba(0, 255, 255, 0.4)');
+
+            gameState.stackedBlocks.push(block);
+
+            setTimeout(() => {
+                gameState.level++;
+                elements.levelDisplay.textContent = gameState.level;
+                
+                // 화면 자동 스크롤 위로 (부드럽게)
+                autoScrollViewport();
+                
+                startNewBlock();
+            }, 500);
+        }
+
+        function handleCutting(cuttedBlock) {
+            showJudgment('✂ CUT!', 'cutting');
+            gameState.currentBlockElement.classList.add('cutting');
+            flashScreen('rgba(255, 170, 0, 0.3)');
+
+            gameState.stackedBlocks.push(cuttedBlock);
+
+            setTimeout(() => {
+                // 블록 너비가 최소값 이하면 게임 오버
+                if (cuttedBlock.width <= gameState.minBlockWidth) {
+                    handleGameOver();
+                } else {
+                    gameState.level++;
+                    elements.levelDisplay.textContent = gameState.level;
+                    
+                    // 화면 자동 스크롤 위로 (부드럽게)
+                    autoScrollViewport();
+                    
+                    startNewBlock();
+                }
+            }, 500);
+        }
+
+        function handleMissed() {
+            showJudgment('✖ MISS!', 'miss');
+            gameState.currentBlockElement.classList.add('gameover');
+            flashScreen('rgba(255, 0, 102, 0.5)');
+
+            setTimeout(() => {
+                handleGameOver();
+            }, 700);
+        }
+
+        function handleGameOver() {
+            gameState.isPlaying = false;
+            if (gameState.animationId) cancelAnimationFrame(gameState.animationId);
+
+            setTimeout(() => {
+                updateRanking(gameState.playerName, gameState.level - 1);
+                showGameOverScreen();
+            }, 300);
+        }
+
+        // ========== 게임 오버 화면 ==========
+        function showGameOverScreen() {
+            elements.gameScreen.classList.add('hidden');
+            elements.gameOverScreen.classList.remove('hidden');
+
+            const finalLevel = gameState.level - 1;
+            elements.finalScore.textContent = finalLevel;
+
+            const playerRecord = gameState.rankings.find(r => r.name === gameState.playerName);
+            if (playerRecord && playerRecord.score === finalLevel) {
+                elements.recordBadge.className = 'record-badge new';
+                elements.recordBadge.innerHTML = '🎉 새로운 최고 기록!<br><span style="font-size: 0.9rem; margin-top: 5px;">축하합니다!</span>';
+            } else {
+                elements.recordBadge.className = 'record-badge old';
+                elements.recordBadge.innerHTML = '💪 도전을 계속해보세요!';
+            }
+
+            displayRankings('gameoverRankingList', 10);
+        }
+
+        // ========== 연출 ==========
+        function showJudgment(text, type) {
+            const judgment = document.createElement('div');
+            judgment.className = `judgment ${type}`;
+            judgment.textContent = text;
+            document.body.appendChild(judgment);
+            setTimeout(() => judgment.remove(), 800);
+        }
+
+        function flashScreen(color) {
+            const flash = document.createElement('div');
+            flash.className = 'screen-flash';
+            flash.style.background = color;
+            document.body.appendChild(flash);
+            setTimeout(() => flash.remove(), 250);
+        }
+
+        // ========== 초정밀 입력 이벤트 ==========
+        document.addEventListener('mousedown', (e) => {
+            if (gameState.gameStarted) {
+                e.preventDefault();
+                const clickTime = performance.now();
+                judgeBlock(clickTime);
+            }
+        }, true);
+
+        document.addEventListener('touchstart', (e) => {
+            if (gameState.gameStarted) {
+                e.preventDefault();
+                const clickTime = performance.now();
+                judgeBlock(clickTime);
+            }
+        }, { passive: false, capture: true });
+
+        document.addEventListener('keydown', (e) => {
+            if ((e.code === 'Space' || e.key === ' ') && gameState.gameStarted) {
+                e.preventDefault();
+                const clickTime = performance.now();
+                judgeBlock(clickTime);
+            }
+        }, true);
+
+        // ========== 초기화 ==========
+        loadRankings();
+        displayRankings('miniRanking', 5);
+    </script>
+</body>
+</html>
