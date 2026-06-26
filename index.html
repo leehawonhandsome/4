@@ -53,10 +53,14 @@
             align-items: center;
             z-index: 2000;
             backdrop-filter: blur(10px);
+            padding: 20px;
+            overflow-y: auto;
+            pointer-events: auto;
         }
 
         #nameModal.hidden {
             display: none;
+            pointer-events: none;
         }
 
         .modal-content {
@@ -64,6 +68,7 @@
             animation: slideUp 0.5s cubic-bezier(0.34, 1.56, 0.64, 1);
             padding: 20px;
             max-width: 90%;
+            width: 100%;
         }
 
         @keyframes slideUp {
@@ -116,6 +121,9 @@
             margin-bottom: 30px;
             transition: all 0.3s ease;
             box-shadow: 0 0 15px rgba(0, 255, 255, 0.1);
+            display: block;
+            margin-left: auto;
+            margin-right: auto;
         }
 
         #playerNameInput:focus {
@@ -130,6 +138,7 @@
             gap: 12px;
             justify-content: center;
             flex-wrap: wrap;
+            margin-bottom: 30px;
         }
 
         .btn-start, .btn-ranking {
@@ -145,6 +154,10 @@
             box-shadow: 0 0 20px rgba(0, 255, 255, 0.5);
             text-transform: uppercase;
             letter-spacing: 1px;
+            pointer-events: auto;
+            user-select: none;
+            -webkit-user-select: none;
+            -webkit-touch-callout: none;
         }
 
         .btn-start:hover, .btn-ranking:hover {
@@ -159,13 +172,14 @@
         .mini-ranking {
             width: 100%;
             max-width: 320px;
-            margin-top: 35px;
             padding: 20px;
             background: rgba(0, 255, 255, 0.05);
             border: 2px solid rgba(0, 255, 255, 0.2);
             border-radius: 12px;
             max-height: 180px;
             overflow-y: auto;
+            margin-left: auto;
+            margin-right: auto;
         }
 
         .mini-ranking h3 {
@@ -199,11 +213,19 @@
             flex: 1;
             margin: 0 10px;
             text-align: left;
+            word-break: break-all;
         }
 
         .rank-score {
             color: #00ffff;
             font-weight: bold;
+        }
+
+        .rank-item.current-player {
+            background: rgba(0, 255, 255, 0.15);
+            padding: 8px;
+            border-radius: 6px;
+            border-bottom: 2px solid #00ffff !important;
         }
 
         /* ========== 랭킹 화면 ========== */
@@ -221,10 +243,13 @@
             z-index: 1999;
             backdrop-filter: blur(10px);
             padding: 20px;
+            overflow-y: auto;
+            pointer-events: auto;
         }
 
         #rankingScreen.hidden {
             display: none;
+            pointer-events: none;
         }
 
         .ranking-box {
@@ -270,6 +295,10 @@
             box-shadow: 0 0 20px rgba(255, 0, 110, 0.5);
             text-transform: uppercase;
             letter-spacing: 1px;
+            pointer-events: auto;
+            user-select: none;
+            -webkit-user-select: none;
+            -webkit-touch-callout: none;
         }
 
         .btn-back:hover {
@@ -288,10 +317,12 @@
             display: flex;
             flex-direction: column;
             background: linear-gradient(180deg, rgba(0, 20, 40, 0.6) 0%, rgba(0, 10, 20, 0.8) 100%);
+            pointer-events: auto;
         }
 
         #gameScreen.hidden {
             display: none;
+            pointer-events: none;
         }
 
         .game-header {
@@ -336,6 +367,10 @@
             font-weight: bold;
             text-transform: uppercase;
             letter-spacing: 0.5px;
+            pointer-events: auto;
+            user-select: none;
+            -webkit-user-select: none;
+            -webkit-touch-callout: none;
         }
 
         .btn-menu:active {
@@ -350,6 +385,7 @@
             align-items: center;
             position: relative;
             overflow: hidden;
+            pointer-events: auto;
         }
 
         .stack-viewport {
@@ -364,6 +400,7 @@
             overflow-y: auto;
             overflow-x: hidden;
             scroll-behavior: smooth;
+            pointer-events: auto;
         }
 
         .block-row {
@@ -562,10 +599,12 @@
             backdrop-filter: blur(10px);
             padding: 20px;
             overflow-y: auto;
+            pointer-events: auto;
         }
 
         #gameOverScreen.hidden {
             display: none;
+            pointer-events: none;
         }
 
         .gameover-box {
@@ -654,7 +693,7 @@
             border-radius: 12px;
             padding: 20px;
             margin-bottom: 30px;
-            max-height: 240px;
+            max-height: 300px;
             overflow-y: auto;
         }
 
@@ -670,7 +709,7 @@
             background: rgba(0, 255, 255, 0.15);
             padding: 10px;
             border-radius: 8px;
-            border: 1px solid #00ffff;
+            border: 2px solid #00ffff;
         }
 
         .gameover-buttons {
@@ -693,6 +732,10 @@
             box-shadow: 0 0 20px rgba(0, 255, 255, 0.5);
             text-transform: uppercase;
             letter-spacing: 1px;
+            pointer-events: auto;
+            user-select: none;
+            -webkit-user-select: none;
+            -webkit-touch-callout: none;
         }
 
         .btn-restart:hover, .btn-home:hover {
@@ -791,7 +834,7 @@
                 <div class="score-label">층에 도달했습니다!</div>
                 <div class="record-badge" id="recordBadge"></div>
                 <div class="gameover-ranking">
-                    <h3>🏆 현재 랭킹</h3>
+                    <h3>🏆 전체 랭킹 🏆</h3>
                     <div id="gameoverRankingList"></div>
                 </div>
                 <div class="gameover-buttons">
@@ -836,7 +879,7 @@
             canvasWidth: 0,
             blockStartPosition: 100,
             hasClicked: false,
-            minBlockWidth: 0.5 // 최소 블록 너비를 0.5%로 설정 (거의 보이지 않지만 존재)
+            minBlockWidth: 0.5
         };
 
         // ========== DOM 요소 ==========
@@ -898,9 +941,13 @@
             items.forEach((ranking, idx) => {
                 const item = document.createElement('div');
                 item.className = 'rank-item';
+                const isCurrentPlayer = ranking.name === gameState.playerName;
+                if (isCurrentPlayer) {
+                    item.classList.add('current-player');
+                }
                 item.innerHTML = `
                     <span class="rank-num">#${idx + 1}</span>
-                    <span class="rank-name">${ranking.name}</span>
+                    <span class="rank-name">${ranking.name}${isCurrentPlayer ? ' 👤' : ''}</span>
                     <span class="rank-score">${ranking.score}</span>
                 `;
                 container.appendChild(item);
@@ -940,6 +987,7 @@
         elements.btnStart.addEventListener('click', startGame);
         elements.btnShowRanking.addEventListener('click', showRanking);
         elements.btnBackFromRanking.addEventListener('click', showHome);
+        
         elements.btnGameMenu.addEventListener('click', () => {
             if (gameState.isPlaying) {
                 if (confirm('게임을 포기하시겠습니까?')) {
@@ -949,12 +997,20 @@
                 showHome();
             }
         });
-        elements.btnRestart.addEventListener('click', () => {
+
+        elements.btnRestart.addEventListener('click', (e) => {
+            e.preventDefault();
+            e.stopPropagation();
             elements.gameOverScreen.classList.add('hidden');
             elements.gameScreen.classList.remove('hidden');
             initGame();
         });
-        elements.btnHome.addEventListener('click', showHome);
+
+        elements.btnHome.addEventListener('click', (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            showHome();
+        });
 
         elements.playerNameInput.addEventListener('keypress', (e) => {
             if (e.key === 'Enter' && elements.playerNameInput.value.trim()) {
@@ -1049,7 +1105,6 @@
             const elapsed = (performance.now() - gameState.blockStartTime) / 1000;
             const progress = elapsed / gameState.blockDuration;
 
-            // 클릭이 없었으면 계속 실행 (허공에 떨어지지 않음)
             if (progress >= 1 && gameState.hasClicked) {
                 handleMissed();
                 return;
@@ -1074,43 +1129,36 @@
             return Math.max(-10, Math.min(100, currentPosition));
         }
 
-        // ========== 수학적 커팅 함수 (핵심) ==========
+        // ========== 수학적 커팅 함수 ==========
         function performPrecisionCutting(currentLeftPercent, currentWidthPercent, bottomBlock) {
-            // 변수 정의
             const bottomLeft = bottomBlock.left;
             const bottomWidth = bottomBlock.width;
             const bottomRight = bottomLeft + bottomWidth;
             const currentLeft = currentLeftPercent;
             const currentRight = currentLeft + currentWidthPercent;
 
-            // 초기 상태: 현재 블록이 아래층과 겹치는지 확인
             const overlapLeft = Math.max(currentLeft, bottomLeft);
             const overlapRight = Math.min(currentRight, bottomRight);
             const overlapWidth = overlapRight - overlapLeft;
 
-            // 겹침이 없으면 즉시 반환
             if (overlapWidth <= 0) {
                 return null;
             }
 
-            // 새로운 블록의 크기와 위치 계산 시작
             let newWidth = currentWidthPercent;
             let newLeft = currentLeft;
 
-            // 왼쪽으로 삐져나간 부분 처리
             if (currentLeft < bottomLeft) {
                 const leftOver = bottomLeft - currentLeft;
                 newWidth = newWidth - leftOver;
                 newLeft = bottomLeft;
             }
 
-            // 오른쪽으로 삐져나간 부분 처리
             if (currentRight > bottomRight) {
                 const rightOver = currentRight - bottomRight;
                 newWidth = newWidth - rightOver;
             }
 
-            // 최소 너비 체크 (0.5% 이하면 게임 오버)
             if (newWidth <= gameState.minBlockWidth) {
                 return null;
             }
@@ -1127,35 +1175,28 @@
 
             gameState.hasClicked = true;
 
-            // 클릭했을 때 아직 게임이 진행중이지 않으면 무시
             if (!gameState.isPlaying || !gameState.currentBlock) return;
 
             gameState.isPlaying = false;
             if (gameState.animationId) cancelAnimationFrame(gameState.animationId);
 
-            // 초정밀 위치 계산
             const precisePosition = calculatePreciseBlockPosition(inputTime);
 
-            // 블록이 화면을 벗어나면 즉시 미스 처리
             if (precisePosition >= 100 || precisePosition <= -10) {
                 handleMissed();
                 return;
             }
 
-            // 현재 멈춘 블록의 위치와 크기 설정
             gameState.currentBlock.left = precisePosition;
 
-            // 아래층 블록 가져오기
             const prevBlock = gameState.stackedBlocks[gameState.stackedBlocks.length - 1];
 
-            // 수학적 커팅 함수 호출
             const cuttingResult = performPrecisionCutting(
                 gameState.currentBlock.left,
                 gameState.currentBlock.width,
                 prevBlock
             );
 
-            // 커팅 결과가 없으면 (완전히 벗어나거나 크기가 0.5% 이하면) 미스
             if (cuttingResult === null) {
                 const leftPx = (precisePosition / 100) * gameState.canvasWidth;
                 gameState.currentBlockElement.style.left = leftPx + 'px';
@@ -1165,11 +1206,9 @@
                 return;
             }
 
-            // 커팅된 블록의 새로운 너비와 위치 적용
             gameState.currentBlock.left = cuttingResult.left;
             gameState.currentBlock.width = cuttingResult.width;
 
-            // DOM 업데이트: 블록의 새로운 위치와 크기 반영
             const leftPx = (cuttingResult.left / 100) * gameState.canvasWidth;
             const widthPx = (cuttingResult.width / 100) * gameState.canvasWidth;
             gameState.currentBlockElement.style.left = leftPx + 'px';
@@ -1177,12 +1216,10 @@
             gameState.currentBlockElement.classList.add('stopped');
             gameState.currentBlockElement.classList.remove('moving');
 
-            // PERFECT 판정 (완벽하게 일치)
             if (Math.abs(gameState.currentBlock.left - prevBlock.left) <= 1.5 &&
                 Math.abs(gameState.currentBlock.right - prevBlock.right) <= 1.5) {
                 handlePerfect(gameState.currentBlock);
             } else {
-                // CUTTING 판정 (부분 잘림)
                 handleCutting(gameState.currentBlock);
             }
         }
@@ -1198,7 +1235,6 @@
                 gameState.level++;
                 elements.levelDisplay.textContent = gameState.level;
                 
-                // 화면 자동 스크롤 위로 (부드럽게)
                 autoScrollViewport();
                 
                 startNewBlock();
@@ -1213,14 +1249,12 @@
             gameState.stackedBlocks.push(cuttedBlock);
 
             setTimeout(() => {
-                // 블록 너비가 최소값 이하면 게임 오버
                 if (cuttedBlock.width <= gameState.minBlockWidth) {
                     handleGameOver();
                 } else {
                     gameState.level++;
                     elements.levelDisplay.textContent = gameState.level;
                     
-                    // 화면 자동 스크롤 위로 (부드럽게)
                     autoScrollViewport();
                     
                     startNewBlock();
@@ -1287,7 +1321,7 @@
 
         // ========== 초정밀 입력 이벤트 ==========
         document.addEventListener('mousedown', (e) => {
-            if (gameState.gameStarted) {
+            if (gameState.gameStarted && gameState.isPlaying) {
                 e.preventDefault();
                 const clickTime = performance.now();
                 judgeBlock(clickTime);
@@ -1295,7 +1329,7 @@
         }, true);
 
         document.addEventListener('touchstart', (e) => {
-            if (gameState.gameStarted) {
+            if (gameState.gameStarted && gameState.isPlaying) {
                 e.preventDefault();
                 const clickTime = performance.now();
                 judgeBlock(clickTime);
@@ -1303,7 +1337,7 @@
         }, { passive: false, capture: true });
 
         document.addEventListener('keydown', (e) => {
-            if ((e.code === 'Space' || e.key === ' ') && gameState.gameStarted) {
+            if ((e.code === 'Space' || e.key === ' ') && gameState.gameStarted && gameState.isPlaying) {
                 e.preventDefault();
                 const clickTime = performance.now();
                 judgeBlock(clickTime);
