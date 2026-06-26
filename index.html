@@ -3,7 +3,47 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-    <title>Stack Rush - 한 방향 타겟</title>
+    <title>Stack Rush - 글로벌 온라인 랭킹</title>
+    
+    <!-- Firebase SDK (v9+ 모듈러 방식) -->
+    <script type="module">
+        // Firebase SDK 동적 로드
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.0/firebase-app.js";
+        import { getFirestore, collection, addDoc, query, orderBy, limit, onSnapshot, where, getDocs, updateDoc } from "https://www.gstatic.com/firebasejs/10.7.0/firebase-firestore.js";
+        import { serverTimestamp } from "https://www.gstatic.com/firebasejs/10.7.0/firebase-firestore.js";
+
+        // ========== Firebase Config (여기에 당신의 설정을 붙여넣으세요) ==========
+        const firebaseConfig = {
+            apiKey: "YOUR_API_KEY_HERE",
+            authDomain: "YOUR_AUTH_DOMAIN_HERE",
+            projectId: "YOUR_PROJECT_ID_HERE",
+            storageBucket: "YOUR_STORAGE_BUCKET_HERE",
+            messagingSenderId: "YOUR_MESSAGING_SENDER_ID_HERE",
+            appId: "YOUR_APP_ID_HERE"
+        };
+
+        // Firebase 초기화
+        const app = initializeApp(firebaseConfig);
+        const db = getFirestore(app);
+
+        // 글로벌 Firebase 객체 생성 (게임 로직에서 접근 가능)
+        window.firebaseDB = {
+            db,
+            collection,
+            addDoc,
+            query,
+            orderBy,
+            limit,
+            onSnapshot,
+            where,
+            getDocs,
+            updateDoc,
+            serverTimestamp
+        };
+
+        console.log("✅ Firebase 연동 완료!");
+    </script>
+
     <style>
         * {
             margin: 0;
@@ -188,6 +228,18 @@
             font-size: 0.9rem;
             text-transform: uppercase;
             letter-spacing: 1px;
+        }
+
+        .loading-text {
+            color: #00ffff;
+            font-size: 0.85rem;
+            margin-top: 10px;
+            animation: blink 1.5s infinite;
+        }
+
+        @keyframes blink {
+            0%, 50%, 100% { opacity: 1; }
+            25%, 75% { opacity: 0.5; }
         }
 
         .rank-item {
@@ -789,7 +841,7 @@
         <div id="nameModal">
             <div class="modal-content">
                 <h1>STACK RUSH</h1>
-                <p>한 방향 타겟 퍼즐</p>
+                <p>🌍 글로벌 온라인 랭킹</p>
                 <input 
                     type="text" 
                     id="playerNameInput" 
@@ -801,15 +853,21 @@
                     <button class="btn-start" id="btnStart">시작</button>
                     <button class="btn-ranking" id="btnShowRanking">랭킹</button>
                 </div>
-                <div class="mini-ranking" id="miniRanking"></div>
+                <div class="mini-ranking" id="miniRanking">
+                    <h3>⚡ TOP 5</h3>
+                    <div id="miniRankingList"></div>
+                    <div class="loading-text">Firebase 연동 중...</div>
+                </div>
             </div>
         </div>
 
         <!-- 랭킹 화면 -->
         <div id="rankingScreen" class="hidden">
             <div class="ranking-box">
-                <h1>🏆 TOP 10 🏆</h1>
-                <div class="full-ranking" id="fullRankingList"></div>
+                <h1>🏆 TOP 20 🏆</h1>
+                <div class="full-ranking" id="fullRankingList">
+                    <div class="loading-text" style="text-align: center; padding: 20px;">데이터 로드 중...</div>
+                </div>
                 <button class="btn-back" id="btnBackFromRanking">돌아가기</button>
             </div>
         </div>
@@ -834,7 +892,7 @@
                 <div class="score-label">층에 도달했습니다!</div>
                 <div class="record-badge" id="recordBadge"></div>
                 <div class="gameover-ranking">
-                    <h3>🏆 전체 랭킹 🏆</h3>
+                    <h3>🏆 글로벌 랭킹 🏆</h3>
                     <div id="gameoverRankingList"></div>
                 </div>
                 <div class="gameover-buttons">
@@ -879,7 +937,8 @@
             canvasWidth: 0,
             blockStartPosition: 100,
             hasClicked: false,
-            minBlockWidth: 0.5
+            minBlockWidth: 0.5,
+            realtime: null
         };
 
         // ========== DOM 요소 ==========
@@ -898,43 +957,113 @@
             playerInfo: document.getElementById('playerInfo'),
             levelDisplay: document.getElementById('levelDisplay'),
             stackViewport: document.getElementById('stackViewport'),
-            miniRanking: document.getElementById('miniRanking'),
+            miniRankingList: document.getElementById('miniRankingList'),
             fullRankingList: document.getElementById('fullRankingList'),
             gameoverRankingList: document.getElementById('gameoverRankingList'),
             finalScore: document.getElementById('finalScore'),
             recordBadge: document.getElementById('recordBadge')
         };
 
-        // ========== 로컬 스토리지 ==========
-        function loadRankings() {
-            const saved = localStorage.getItem('stackRushRankings');
-            gameState.rankings = saved ? JSON.parse(saved) : [];
-        }
-
-        function saveRankings() {
-            localStorage.setItem('stackRushRankings', JSON.stringify(gameState.rankings));
-        }
-
-        function updateRanking(playerName, score) {
-            const idx = gameState.rankings.findIndex(r => r.name === playerName);
-            if (idx !== -1) {
-                if (score > gameState.rankings[idx].score) {
-                    gameState.rankings[idx].score = score;
-                }
-            } else {
-                gameState.rankings.push({ name: playerName, score });
+        // ========== Firebase Realtime 리스너 시작 ==========
+        function startRealtimeListener() {
+            if (!window.firebaseDB) {
+                console.error("❌ Firebase가 아직 초기화되지 않았습니다!");
+                return;
             }
-            gameState.rankings.sort((a, b) => b.score - a.score);
-            saveRankings();
+
+            const { db, collection, query, orderBy, limit, onSnapshot } = window.firebaseDB;
+
+            if (gameState.realtime) {
+                gameState.realtime();
+            }
+
+            // scores 컬렉션 쿼리: 점수 내림차순, 상위 20개
+            const q = query(
+                collection(db, 'scores'),
+                orderBy('score', 'desc'),
+                limit(20)
+            );
+
+            // 실시간 리스너 시작
+            gameState.realtime = onSnapshot(q, (snapshot) => {
+                gameState.rankings = [];
+                snapshot.forEach((doc) => {
+                    gameState.rankings.push({
+                        id: doc.id,
+                        name: doc.data().name,
+                        score: doc.data().score,
+                        timestamp: doc.data().timestamp
+                    });
+                });
+
+                console.log("📊 랭킹 업데이트:", gameState.rankings);
+
+                // 미니 랭킹 업데이트 (메인 화면용)
+                if (!elements.gameScreen.classList.contains('hidden')) {
+                    displayRankings('gameoverRankingList', 20);
+                }
+            });
         }
 
+        // ========== Firebase에 점수 저장 또는 업데이트 ==========
+        async function saveScoreToFirebase(playerName, score) {
+            if (!window.firebaseDB) {
+                console.error("❌ Firebase가 초기화되지 않았습니다!");
+                return;
+            }
+
+            const { db, collection, query, where, getDocs, updateDoc, addDoc, serverTimestamp } = window.firebaseDB;
+
+            try {
+                // 1. 해당 이름의 기존 기록 조회
+                const q = query(
+                    collection(db, 'scores'),
+                    where('name', '==', playerName)
+                );
+
+                const querySnapshot = await getDocs(q);
+
+                if (querySnapshot.empty) {
+                    // 기존 기록이 없으면 새로 추가
+                    await addDoc(collection(db, 'scores'), {
+                        name: playerName,
+                        score: score,
+                        timestamp: serverTimestamp()
+                    });
+                    console.log("✅ 새 기록 추가:", playerName, score);
+                } else {
+                    // 기존 기록이 있으면 점수 비교
+                    const existingDoc = querySnapshot.docs[0];
+                    const existingScore = existingDoc.data().score;
+
+                    if (score > existingScore) {
+                        // 현재 점수가 더 높으면 업데이트
+                        await updateDoc(existingDoc.ref, {
+                            score: score,
+                            timestamp: serverTimestamp()
+                        });
+                        console.log("📈 기록 업데이트:", playerName, existingScore, "→", score);
+                    } else {
+                        // 현재 점수가 더 낮으면 저장 안 함
+                        console.log("⚠️  기존 기록이 더 높음. 저장 안 함.");
+                    }
+                }
+
+                // 점수 저장 후 랭킹 새로고침
+                startRealtimeListener();
+            } catch (error) {
+                console.error("❌ Firebase 저장 오류:", error);
+            }
+        }
+
+        // ========== 랭킹 표시 ==========
         function displayRankings(containerId, limit = 10) {
             const container = document.getElementById(containerId);
             container.innerHTML = '';
             const items = gameState.rankings.slice(0, limit);
             
             if (items.length === 0) {
-                container.innerHTML = '<div style="padding: 20px; color: #aaa;">아직 기록이 없습니다</div>';
+                container.innerHTML = '<div style="padding: 20px; color: #aaa; text-align: center;">아직 기록이 없습니다</div>';
                 return;
             }
 
@@ -943,7 +1072,7 @@
                 item.className = 'rank-item';
                 const isCurrentPlayer = ranking.name === gameState.playerName;
                 if (isCurrentPlayer) {
-                    item.classList.add('current-player');
+                    item.classList.add('current-player', 'current');
                 }
                 item.innerHTML = `
                     <span class="rank-num">#${idx + 1}</span>
@@ -961,7 +1090,7 @@
             elements.gameOverScreen.classList.add('hidden');
             elements.rankingScreen.classList.add('hidden');
             if (gameState.animationId) cancelAnimationFrame(gameState.animationId);
-            displayRankings('miniRanking', 5);
+            displayRankings('miniRankingList', 5);
         }
 
         function startGame() {
@@ -980,7 +1109,7 @@
         function showRanking() {
             elements.nameModal.classList.add('hidden');
             elements.rankingScreen.classList.remove('hidden');
-            displayRankings('fullRankingList', 10);
+            displayRankings('fullRankingList', 20);
         }
 
         // ========== 버튼 이벤트 ==========
@@ -1041,7 +1170,7 @@
             }, 600);
         }
 
-        // ========== 뷰포트 자동 스크롤 함수 ==========
+        // ========== 뷰포트 자동 스크롤 ==========
         function autoScrollViewport() {
             const viewport = elements.stackViewport;
             const targetScroll = Math.max(0, viewport.scrollHeight - viewport.clientHeight - 100);
@@ -1113,7 +1242,7 @@
             gameState.animationId = requestAnimationFrame(animateBlock);
         }
 
-        // ========== 초정밀 클릭 위치 계산 로직 ==========
+        // ========== 초정밀 클릭 위치 계산 ==========
         function calculatePreciseBlockPosition(clickTime) {
             const totalDuration = gameState.blockDuration;
             const elapsedSinceStart = (clickTime - gameState.blockStartTime) / 1000;
@@ -1277,7 +1406,8 @@
             if (gameState.animationId) cancelAnimationFrame(gameState.animationId);
 
             setTimeout(() => {
-                updateRanking(gameState.playerName, gameState.level - 1);
+                const finalScore = gameState.level - 1;
+                saveScoreToFirebase(gameState.playerName, finalScore);
                 showGameOverScreen();
             }, 300);
         }
@@ -1299,7 +1429,7 @@
                 elements.recordBadge.innerHTML = '💪 도전을 계속해보세요!';
             }
 
-            displayRankings('gameoverRankingList', 10);
+            displayRankings('gameoverRankingList', 20);
         }
 
         // ========== 연출 ==========
@@ -1345,8 +1475,11 @@
         }, true);
 
         // ========== 초기화 ==========
-        loadRankings();
-        displayRankings('miniRanking', 5);
+        // Firebase가 로드될 때까지 잠시 대기 후 랭킹 리스너 시작
+        setTimeout(() => {
+            startRealtimeListener();
+            displayRankings('miniRankingList', 5);
+        }, 1000);
     </script>
 </body>
 </html>
