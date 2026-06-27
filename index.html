@@ -1601,8 +1601,7 @@ function movLoop(ts){
   if(!G.playing||!G.movEl)return;
   if(G.movPrevT===null){G.movPrevT=ts;G.movRAF=requestAnimationFrame(movLoop);return;}
   const dt=Math.min((ts-G.movPrevT)/1000,0.02);G.movPrevT=ts;
-  const effectiveSpeed=G.movWidth<20?Math.min(G.movSpeed,360):G.movSpeed;
-  G.movLeft+=G.movDir*effectiveSpeed*dt;
+  G.movLeft+=G.movDir*G.movSpeed*dt;
   const leftBound=G.gameOff-G.movWidth,rightBound=G.gameOff+G.gameW;
   if(G.movLeft<leftBound){G.movLeft=leftBound+(leftBound-G.movLeft);if(G.movLeft>rightBound)G.movLeft=leftBound;G.movDir=1;}
   if(G.movLeft>rightBound){G.movLeft=rightBound-(G.movLeft-rightBound);if(G.movLeft<leftBound)G.movLeft=rightBound;G.movDir=-1;}
