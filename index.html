@@ -3,1495 +3,818 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-    <title>Stack Rush - 글로벌 온라인 랭킹</title>
-    
-    <!-- Firebase SDK (CDN v9+) -->
+    <title>Stack Rush</title>
+
     <script src="https://www.gstatic.com/firebasejs/10.7.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.7.0/firebase-firestore-compat.js"></script>
 
     <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-            -webkit-tap-highlight-color: transparent;
-        }
-
+        * { margin:0; padding:0; box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
         html, body {
-            width: 100%;
-            height: 100%;
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background: linear-gradient(135deg, #0a0e27 0%, #1a1f3a 100%);
-            color: #fff;
-            overflow: hidden;
-            touch-action: manipulation;
+            width:100%; height:100%;
+            font-family:'Segoe UI',sans-serif;
+            background:linear-gradient(135deg,#0a0e27,#1a1f3a);
+            color:#fff; overflow:hidden; touch-action:manipulation;
+            position:fixed;
         }
+        body { display:flex; justify-content:center; align-items:center; }
 
-        body {
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            position: fixed;
+        .screen {
+            position:fixed; inset:0;
+            background:rgba(10,14,39,0.98);
+            display:flex; flex-direction:column;
+            justify-content:center; align-items:center;
+            z-index:2000; backdrop-filter:blur(10px);
+            padding:20px; overflow-y:auto;
         }
+        .screen.hidden { display:none; }
 
-        .game-wrapper {
-            width: 100%;
-            height: 100%;
-            max-width: 100vw;
-            max-height: 100vh;
-            display: flex;
-            flex-direction: column;
-            position: relative;
-        }
-
-        /* ========== 이름 입력 모달 ========== */
-        #nameModal {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: rgba(10, 14, 39, 0.98);
-            display: flex;
-            flex-direction: column;
-            justify-content: center;
-            align-items: center;
-            z-index: 2000;
-            backdrop-filter: blur(10px);
-            padding: 20px;
-            overflow-y: auto;
-            pointer-events: auto;
-        }
-
-        #nameModal.hidden {
-            display: none;
-            pointer-events: none;
-        }
-
-        .modal-content {
-            text-align: center;
-            animation: slideUp 0.5s cubic-bezier(0.34, 1.56, 0.64, 1);
-            padding: 20px;
-            max-width: 90%;
-            width: 100%;
-        }
-
-        @keyframes slideUp {
-            from {
-                opacity: 0;
-                transform: translateY(60px);
-            }
-            to {
-                opacity: 1;
-                transform: translateY(0);
-            }
-        }
-
+        .modal-content { text-align:center; width:100%; max-width:400px; }
         .modal-content h1 {
-            font-size: clamp(2.5rem, 12vw, 4rem);
-            margin-bottom: 15px;
-            background: linear-gradient(90deg, #00ffff, #ff00ff, #00ffff);
-            background-size: 200% 200%;
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            background-clip: text;
-            animation: gradientFlow 3s ease infinite;
-            font-weight: 900;
-            letter-spacing: 2px;
-            text-shadow: 0 0 30px rgba(0, 255, 255, 0.3);
+            font-size:clamp(2rem,9vw,3.2rem); font-weight:900; letter-spacing:2px;
+            background:linear-gradient(90deg,#00ffff,#ff00ff,#00ffff);
+            background-size:200%; -webkit-background-clip:text;
+            -webkit-text-fill-color:transparent; background-clip:text;
+            animation:gFlow 3s ease infinite; margin-bottom:10px;
         }
-
-        @keyframes gradientFlow {
-            0%, 100% { background-position: 0% 50%; }
-            50% { background-position: 100% 50%; }
-        }
-
-        .modal-content p {
-            font-size: 1.1rem;
-            color: #aaa;
-            margin-bottom: 30px;
-            letter-spacing: 1px;
-        }
+        @keyframes gFlow { 0%,100%{background-position:0%} 50%{background-position:100%} }
+        .modal-content p { color:#aaa; margin-bottom:22px; }
 
         #playerNameInput {
-            width: 85%;
-            max-width: 300px;
-            padding: 16px 20px;
-            font-size: 1.1rem;
-            border: 2px solid #00ffff;
-            border-radius: 12px;
-            background: rgba(0, 255, 255, 0.08);
-            color: #fff;
-            text-align: center;
-            margin-bottom: 30px;
-            transition: all 0.3s ease;
-            box-shadow: 0 0 15px rgba(0, 255, 255, 0.1);
-            display: block;
-            margin-left: auto;
-            margin-right: auto;
+            width:80%; max-width:280px; padding:13px 16px; font-size:1rem;
+            border:2px solid #00ffff; border-radius:10px;
+            background:rgba(0,255,255,0.08); color:#fff; text-align:center;
+            margin:0 auto 22px; display:block;
         }
+        #playerNameInput:focus { outline:none; border-color:#ff00ff; }
 
-        #playerNameInput:focus {
-            outline: none;
-            border-color: #ff00ff;
-            background: rgba(255, 0, 255, 0.1);
-            box-shadow: 0 0 25px rgba(255, 0, 255, 0.4);
-        }
+        .modal-buttons { display:flex; gap:10px; justify-content:center; margin-bottom:22px; flex-wrap:wrap; }
 
-        .modal-buttons {
-            display: flex;
-            gap: 12px;
-            justify-content: center;
-            flex-wrap: wrap;
-            margin-bottom: 30px;
+        .btn {
+            padding:12px 28px; font-size:0.93rem; font-weight:bold;
+            background:linear-gradient(90deg,#00ffff,#ff00ff);
+            color:#000; border:none; border-radius:10px; cursor:pointer;
+            transition:transform 0.15s; text-transform:uppercase; letter-spacing:1px;
+            user-select:none; -webkit-user-select:none;
         }
-
-        .btn-start, .btn-ranking {
-            padding: 14px 35px;
-            font-size: 1rem;
-            font-weight: bold;
-            background: linear-gradient(90deg, #00ffff, #ff00ff);
-            color: #000;
-            border: none;
-            border-radius: 10px;
-            cursor: pointer;
-            transition: all 0.3s ease;
-            box-shadow: 0 0 20px rgba(0, 255, 255, 0.5);
-            text-transform: uppercase;
-            letter-spacing: 1px;
-            pointer-events: auto;
-            user-select: none;
-            -webkit-user-select: none;
-            -webkit-touch-callout: none;
-        }
-
-        .btn-start:hover, .btn-ranking:hover {
-            transform: scale(1.1);
-            box-shadow: 0 0 35px rgba(255, 0, 255, 0.7);
-        }
-
-        .btn-start:active, .btn-ranking:active {
-            transform: scale(0.95);
-        }
+        .btn:active { transform:scale(0.92); }
+        .btn.red { background:linear-gradient(90deg,#ff0066,#ff6600); color:#fff; }
 
         .mini-ranking {
-            width: 100%;
-            max-width: 320px;
-            padding: 20px;
-            background: rgba(0, 255, 255, 0.05);
-            border: 2px solid rgba(0, 255, 255, 0.2);
-            border-radius: 12px;
-            max-height: 180px;
-            overflow-y: auto;
-            margin-left: auto;
-            margin-right: auto;
+            width:100%; max-width:300px; padding:16px;
+            background:rgba(0,255,255,0.05); border:2px solid rgba(0,255,255,0.2);
+            border-radius:12px; max-height:250px; overflow-y:auto;
+            margin:0 auto;
         }
+        .mini-ranking h3 { color:#00ffff; margin-bottom:10px; font-size:0.82rem; text-transform:uppercase; letter-spacing:1px; }
 
-        .mini-ranking h3 {
-            color: #00ffff;
-            margin-bottom: 12px;
-            font-size: 0.9rem;
-            text-transform: uppercase;
-            letter-spacing: 1px;
+        .rank-loading {
+            color:#aaa; text-align:center; padding:16px; font-size:0.85rem;
+            animation: pulse 1.2s ease infinite;
         }
+        @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.3} }
 
-        .loading-text {
-            color: #00ffff;
-            font-size: 0.85rem;
-            margin-top: 10px;
-            animation: blink 1.5s infinite;
+        .conn-status {
+            display:inline-flex; align-items:center; gap:6px;
+            font-size:0.78rem; margin-bottom:14px;
+            padding:5px 12px; border-radius:20px; border:1px solid;
         }
-
-        @keyframes blink {
-            0%, 50%, 100% { opacity: 1; }
-            25%, 75% { opacity: 0.5; }
-        }
+        .conn-status.online  { color:#00ff88; border-color:#00ff88; background:rgba(0,255,136,0.08); }
+        .conn-status.offline { color:#ff4466; border-color:#ff4466; background:rgba(255,68,102,0.08); }
+        .conn-dot { width:7px; height:7px; border-radius:50%; background:currentColor; }
+        .conn-status.online .conn-dot { animation: blink 1.2s ease infinite; }
+        @keyframes blink { 0%,100%{opacity:1} 50%{opacity:0.2} }
 
         .rank-item {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            padding: 8px 0;
-            border-bottom: 1px solid rgba(0, 255, 255, 0.1);
-            font-size: 0.95rem;
+            display:flex; justify-content:space-between; align-items:center;
+            padding:8px 0; border-bottom:1px solid rgba(0,255,255,0.1); font-size:0.86rem;
         }
-
-        .rank-item:last-child {
-            border-bottom: none;
+        .rank-item:last-child { border-bottom:none; }
+        .rank-num  { color:#ff00ff; font-weight:bold; width:28px; font-size:0.8rem; }
+        .rank-name { flex:1; margin:0 8px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+        .rank-score{ color:#00ffff; font-weight:bold; }
+        .rank-item.me {
+            background:rgba(0,255,255,0.12); padding:8px 6px; border-radius:6px;
+            border-bottom:2px solid #00ffff !important;
         }
+        .rank-num.top1 { color:#FFD700; font-size:1rem; }
+        .rank-num.top2 { color:#C0C0C0; font-size:0.95rem; }
+        .rank-num.top3 { color:#CD7F32; font-size:0.9rem; }
 
-        .rank-num {
-            color: #ff00ff;
-            font-weight: bold;
-            width: 30px;
-        }
-
-        .rank-name {
-            flex: 1;
-            margin: 0 10px;
-            text-align: left;
-            word-break: break-all;
-        }
-
-        .rank-score {
-            color: #00ffff;
-            font-weight: bold;
-        }
-
-        .rank-item.current-player {
-            background: rgba(0, 255, 255, 0.15);
-            padding: 8px;
-            border-radius: 6px;
-            border-bottom: 2px solid #00ffff !important;
-        }
-
-        /* ========== 랭킹 화면 ========== */
-        #rankingScreen {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: rgba(10, 14, 39, 0.98);
-            display: flex;
-            flex-direction: column;
-            justify-content: center;
-            align-items: center;
-            z-index: 1999;
-            backdrop-filter: blur(10px);
-            padding: 20px;
-            overflow-y: auto;
-            pointer-events: auto;
-        }
-
-        #rankingScreen.hidden {
-            display: none;
-            pointer-events: none;
-        }
-
-        .ranking-box {
-            text-align: center;
-            animation: slideUp 0.5s cubic-bezier(0.34, 1.56, 0.64, 1);
-            width: 100%;
-            max-width: 400px;
-        }
-
-        .ranking-box h1 {
-            font-size: 2.8rem;
-            margin-bottom: 30px;
-            color: #00ffff;
-            text-shadow: 0 0 20px rgba(0, 255, 255, 0.8);
-            letter-spacing: 2px;
-        }
-
-        .full-ranking {
-            background: rgba(0, 255, 255, 0.05);
-            border: 2px solid rgba(0, 255, 255, 0.2);
-            border-radius: 12px;
-            padding: 25px 20px;
-            max-height: 55vh;
-            overflow-y: auto;
-            margin-bottom: 25px;
-        }
-
-        .full-ranking .rank-item {
-            padding: 12px 0;
-            font-size: 1rem;
-        }
-
-        .btn-back {
-            padding: 14px 40px;
-            font-size: 1rem;
-            font-weight: bold;
-            background: linear-gradient(90deg, #ff00ff, #00ffff);
-            color: #000;
-            border: none;
-            border-radius: 10px;
-            cursor: pointer;
-            transition: all 0.3s ease;
-            box-shadow: 0 0 20px rgba(255, 0, 110, 0.5);
-            text-transform: uppercase;
-            letter-spacing: 1px;
-            pointer-events: auto;
-            user-select: none;
-            -webkit-user-select: none;
-            -webkit-touch-callout: none;
-        }
-
-        .btn-back:hover {
-            transform: scale(1.1);
-            box-shadow: 0 0 35px rgba(0, 255, 255, 0.7);
-        }
-
-        .btn-back:active {
-            transform: scale(0.95);
-        }
-
-        /* ========== 게임 화면 ========== */
         #gameScreen {
-            width: 100%;
-            height: 100%;
-            display: flex;
-            flex-direction: column;
-            background: linear-gradient(180deg, rgba(0, 20, 40, 0.6) 0%, rgba(0, 10, 20, 0.8) 100%);
-            pointer-events: auto;
+            position:fixed; inset:0; z-index:10;
+            display:flex; flex-direction:column;
         }
-
-        #gameScreen.hidden {
-            display: none;
-            pointer-events: none;
-        }
+        #gameScreen.hidden { display:none; }
 
         .game-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            padding: 15px 20px;
-            border-bottom: 2px solid rgba(0, 255, 255, 0.2);
-            background: rgba(0, 0, 0, 0.3);
-            flex-shrink: 0;
+            display:flex; justify-content:space-between; align-items:center;
+            padding:13px 16px; border-bottom:2px solid rgba(0,255,255,0.2);
+            background:rgba(0,0,0,0.5); flex-shrink:0; z-index:100;
         }
-
-        .player-info {
-            font-size: 1rem;
-            color: #00ffff;
-            font-weight: bold;
-            letter-spacing: 1px;
-        }
-
+        .player-info { font-size:0.9rem; color:#00ffff; font-weight:bold; }
         .level-display {
-            font-size: 2rem;
-            font-weight: 900;
-            color: #ff00ff;
-            text-shadow: 0 0 20px rgba(255, 0, 255, 0.7);
-            animation: pulse 1s ease-in-out infinite;
+            font-size:1.7rem; font-weight:900; color:#ff00ff;
+            text-shadow:0 0 15px rgba(255,0,255,0.7);
         }
 
-        @keyframes pulse {
-            0%, 100% { transform: scale(1); }
-            50% { transform: scale(1.1); }
+        #gameCanvas {
+            flex:1; position:relative; overflow:hidden;
+            background:linear-gradient(180deg, #0a0e27 0%, #111830 100%);
         }
-
-        .btn-menu {
-            padding: 10px 20px;
-            font-size: 0.95rem;
-            background: rgba(255, 0, 102, 0.8);
-            color: #fff;
-            border: none;
-            border-radius: 8px;
-            cursor: pointer;
-            transition: all 0.3s ease;
-            font-weight: bold;
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
-            pointer-events: auto;
-            user-select: none;
-            -webkit-user-select: none;
-            -webkit-touch-callout: none;
-        }
-
-        .btn-menu:active {
-            transform: scale(0.95);
-        }
-
-        .game-canvas {
-            flex: 1;
-            display: flex;
-            flex-direction: column;
-            justify-content: flex-end;
-            align-items: center;
-            position: relative;
-            overflow: hidden;
-            pointer-events: auto;
-        }
-
-        .stack-viewport {
-            position: relative;
-            width: 100%;
-            height: 100%;
-            display: flex;
-            flex-direction: column-reverse;
-            justify-content: flex-start;
-            align-items: center;
-            padding: 20px 0;
-            overflow-y: auto;
-            overflow-x: hidden;
-            scroll-behavior: smooth;
-            pointer-events: auto;
-        }
-
-        .block-row {
-            position: relative;
-            width: 100%;
-            height: 40px;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            flex-shrink: 0;
+        #viewport {
+            position:absolute; top:0; left:0; width:100%;
+            will-change:transform;
         }
 
         .block {
-            position: absolute;
-            height: 100%;
-            background: linear-gradient(90deg, #00ffff, #ff00ff);
-            border-radius: 8px;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            font-weight: 900;
-            font-size: 0.85rem;
-            color: #000;
-            box-shadow: 0 0 20px rgba(0, 255, 255, 0.6);
-            transition: none;
-            letter-spacing: 1px;
-        }
-
-        .block.moving {
-            animation: slideLeft var(--duration, 3s) linear forwards;
-        }
-
-        @keyframes slideLeft {
-            from {
-                left: 100%;
-            }
-            to {
-                left: -10%;
-            }
-        }
-
-        .block.stopped {
-            animation: none !important;
-        }
-
-        .block.perfect {
-            animation: perfectFlash 0.4s ease !important;
-        }
-
-        @keyframes perfectFlash {
-            0% { box-shadow: 0 0 20px rgba(0, 255, 255, 0.6); }
-            50% { box-shadow: 0 0 50px rgba(0, 255, 255, 1), inset 0 0 20px rgba(0, 255, 255, 0.5); }
-            100% { box-shadow: 0 0 20px rgba(0, 255, 255, 0.6); }
-        }
-
-        .block.cutting {
-            animation: cuttingAnimation 0.4s ease !important;
-        }
-
-        @keyframes cuttingAnimation {
-            0% { 
-                box-shadow: 0 0 20px rgba(255, 0, 255, 0.6);
-                filter: brightness(1);
-            }
-            50% { 
-                box-shadow: 0 0 50px rgba(255, 200, 0, 1);
-                filter: brightness(1.3);
-            }
-            100% { 
-                box-shadow: 0 0 20px rgba(0, 255, 255, 0.6);
-                filter: brightness(1);
-            }
-        }
-
-        .block.gameover {
-            animation: gameOverShake 0.6s ease !important;
-        }
-
-        @keyframes gameOverShake {
-            0%, 100% { transform: translateX(0) rotateZ(0deg); }
-            10% { transform: translateX(-15px) rotateZ(-8deg); }
-            20% { transform: translateX(15px) rotateZ(8deg); }
-            30% { transform: translateX(-15px) rotateZ(-8deg); }
-            40% { transform: translateX(15px) rotateZ(8deg); }
-            50% { transform: translateX(-10px) rotateZ(-5deg); }
-            60% { transform: translateX(10px) rotateZ(5deg); }
-            70% { transform: translateX(-5px) rotateZ(-2deg); }
-            80% { transform: translateX(5px) rotateZ(2deg); }
+            position:absolute; border-radius:8px;
+            display:flex; justify-content:center; align-items:center;
+            font-weight:900; font-size:0.78rem; color:#000;
+            box-shadow:0 0 14px rgba(0,255,255,0.4);
+            letter-spacing:1px; will-change:left;
         }
 
         .judgment {
-            position: fixed;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-            font-size: 3.5rem;
-            font-weight: 900;
-            z-index: 800;
-            pointer-events: none;
-            text-shadow: 0 0 30px;
-            letter-spacing: 2px;
+            position:fixed; top:38%; left:50%;
+            transform:translate(-50%,-50%);
+            font-size:2.8rem; font-weight:900;
+            pointer-events:none; z-index:800; letter-spacing:2px;
+        }
+        .judgment.perfect { color:#00ffff; text-shadow:0 0 25px #00ffff; animation:jPop .75s ease forwards; }
+        .judgment.cut     { color:#ffaa00; text-shadow:0 0 25px #ffaa00; animation:jPop .75s ease forwards; }
+        .judgment.miss    { color:#ff0055; text-shadow:0 0 25px #ff0055; animation:jPop .75s ease forwards; }
+        @keyframes jPop {
+            0%  { opacity:1; transform:translate(-50%,-50%) scale(0.3); }
+            40% { opacity:1; transform:translate(-50%,-50%) scale(1.2); }
+            100%{ opacity:0; transform:translate(-50%,-170%) scale(0.9); }
         }
 
-        .judgment.perfect {
-            color: #00ffff;
-            text-shadow: 0 0 40px rgba(0, 255, 255, 1);
-            animation: judgmentPerfect 0.8s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+        .flash { position:fixed; inset:0; pointer-events:none; z-index:700; animation:fOut .25s ease-out forwards; }
+        @keyframes fOut { from{opacity:1} to{opacity:0} }
+
+        .debris {
+            position:fixed; border-radius:3px; pointer-events:none; z-index:300;
+            animation:debFly var(--t,.7s) cubic-bezier(.2,.8,.4,1) forwards;
+        }
+        @keyframes debFly { to { opacity:0; transform:translate(var(--dx),var(--dy)) rotate(var(--r)); } }
+
+        .result-box { text-align:center; width:100%; max-width:420px; }
+        .go-title    { font-size:3rem; color:#ff0066; margin-bottom:8px; letter-spacing:2px; }
+        .final-score { font-size:clamp(3rem,12vw,4.5rem); font-weight:900; color:#00ffff; text-shadow:0 0 35px #00ffff; margin:6px 0; }
+        .score-sub   { color:#aaa; margin-bottom:18px; font-size:1rem; }
+        .badge { padding:14px; margin-bottom:18px; border-radius:10px; font-weight:bold; font-size:0.97rem; border:2px solid; }
+        .badge.new { border-color:#00ffff; color:#00ffff; background:rgba(0,255,255,0.08); }
+        .badge.old { border-color:#ff0066; color:#ff6699; background:rgba(255,0,102,0.08); }
+
+        .rank-box {
+            background:rgba(0,255,255,0.04); border:2px solid rgba(0,255,255,0.2);
+            border-radius:12px; padding:16px; margin-bottom:20px;
+            max-height:32vh; overflow-y:auto;
+        }
+        .rank-box h3 { color:#00ffff; margin-bottom:10px; font-size:0.82rem; text-transform:uppercase; letter-spacing:1px; }
+        .action-btns { display:flex; gap:10px; justify-content:center; flex-wrap:wrap; }
+
+        .my-rank-badge {
+            margin-bottom:14px; padding:10px 16px; border-radius:8px;
+            background:rgba(255,0,255,0.1); border:1px solid #ff00ff;
+            color:#ff00ff; font-size:0.88rem; font-weight:bold;
         }
 
-        .judgment.cutting {
-            color: #ffaa00;
-            text-shadow: 0 0 40px rgba(255, 170, 0, 1);
-            animation: judgmentCutting 0.8s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
-        }
-
-        .judgment.miss {
-            color: #ff0066;
-            text-shadow: 0 0 40px rgba(255, 0, 102, 1);
-            animation: judgmentMiss 0.8s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
-        }
-
-        @keyframes judgmentPerfect {
-            0% {
-                opacity: 1;
-                transform: translate(-50%, -50%) scale(0.3) rotateZ(-20deg);
-            }
-            50% {
-                opacity: 1;
-                transform: translate(-50%, -50%) scale(1.3) rotateZ(10deg);
-            }
-            100% {
-                opacity: 0;
-                transform: translate(-50%, -200%) scale(1) rotateZ(0deg);
-            }
-        }
-
-        @keyframes judgmentCutting {
-            0% {
-                opacity: 1;
-                transform: translate(-50%, -50%) scale(0.2) rotateZ(20deg);
-            }
-            60% {
-                opacity: 1;
-                transform: translate(-50%, -50%) scale(1.2) rotateZ(-15deg);
-            }
-            100% {
-                opacity: 0;
-                transform: translate(-50%, -180%) scale(0.8) rotateZ(5deg);
-            }
-        }
-
-        @keyframes judgmentMiss {
-            0% {
-                opacity: 1;
-                transform: translate(-50%, -50%) scale(1);
-            }
-            50% {
-                opacity: 1;
-                transform: translate(-50%, -50%) scale(1.2) rotateZ(-10deg);
-            }
-            100% {
-                opacity: 0;
-                transform: translate(-50%, -120%) scale(0.5) rotateZ(20deg);
-            }
-        }
-
-        .screen-flash {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            pointer-events: none;
-            z-index: 700;
-            animation: flashPulse 0.25s ease-out;
-        }
-
-        @keyframes flashPulse {
-            0% { opacity: 1; }
-            100% { opacity: 0; }
-        }
-
-        /* ========== 게임 오버 화면 ========== */
-        #gameOverScreen {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: rgba(10, 14, 39, 0.98);
-            display: flex;
-            flex-direction: column;
-            justify-content: center;
-            align-items: center;
-            z-index: 1998;
-            backdrop-filter: blur(10px);
-            padding: 20px;
-            overflow-y: auto;
-            pointer-events: auto;
-        }
-
-        #gameOverScreen.hidden {
-            display: none;
-            pointer-events: none;
-        }
-
-        .gameover-box {
-            text-align: center;
-            animation: slideUp 0.6s cubic-bezier(0.34, 1.56, 0.64, 1);
-            width: 100%;
-            max-width: 420px;
-        }
-
-        .gameover-text {
-            font-size: 4rem;
-            color: #ff0066;
-            margin-bottom: 15px;
-            animation: bounceDown 0.6s cubic-bezier(0.34, 1.56, 0.64, 1);
-            letter-spacing: 2px;
-        }
-
-        @keyframes bounceDown {
-            0% {
-                opacity: 0;
-                transform: translateY(-60px) scale(0.5);
-            }
-            100% {
-                opacity: 1;
-                transform: translateY(0) scale(1);
-            }
-        }
-
-        .final-score {
-            font-size: clamp(3.5rem, 15vw, 5rem);
-            font-weight: 900;
-            color: #00ffff;
-            margin: 10px 0;
-            text-shadow: 0 0 50px rgba(0, 255, 255, 0.9);
-            animation: scorePopup 0.6s cubic-bezier(0.34, 1.56, 0.64, 1);
-        }
-
-        @keyframes scorePopup {
-            0% {
-                transform: scale(0.3);
-                opacity: 0;
-            }
-            100% {
-                transform: scale(1);
-                opacity: 1;
-            }
-        }
-
-        .score-label {
-            font-size: 1.2rem;
-            color: #aaa;
-            margin-bottom: 25px;
-            letter-spacing: 1px;
-        }
-
-        .record-badge {
-            padding: 18px;
-            margin-bottom: 30px;
-            border-radius: 12px;
-            font-size: 1.1rem;
-            font-weight: bold;
-            min-height: 70px;
-            display: flex;
-            flex-direction: column;
-            justify-content: center;
-            align-items: center;
-            letter-spacing: 0.5px;
-        }
-
-        .record-badge.new {
-            background: rgba(0, 255, 255, 0.1);
-            border: 2px solid #00ffff;
-            color: #00ffff;
-            text-shadow: 0 0 20px rgba(0, 255, 255, 0.7);
-        }
-
-        .record-badge.old {
-            background: rgba(255, 0, 102, 0.1);
-            border: 2px solid rgba(255, 0, 102, 0.5);
-            color: #ff6699;
-        }
-
-        .gameover-ranking {
-            background: rgba(0, 255, 255, 0.05);
-            border: 2px solid rgba(0, 255, 255, 0.2);
-            border-radius: 12px;
-            padding: 20px;
-            margin-bottom: 30px;
-            max-height: 300px;
-            overflow-y: auto;
-        }
-
-        .gameover-ranking h3 {
-            color: #00ffff;
-            margin-bottom: 15px;
-            font-size: 0.9rem;
-            text-transform: uppercase;
-            letter-spacing: 1px;
-        }
-
-        .gameover-ranking .rank-item.current {
-            background: rgba(0, 255, 255, 0.15);
-            padding: 10px;
-            border-radius: 8px;
-            border: 2px solid #00ffff;
-        }
-
-        .gameover-buttons {
-            display: flex;
-            gap: 12px;
-            justify-content: center;
-            flex-wrap: wrap;
-        }
-
-        .btn-restart, .btn-home {
-            padding: 14px 35px;
-            font-size: 1rem;
-            font-weight: bold;
-            background: linear-gradient(90deg, #00ffff, #ff00ff);
-            color: #000;
-            border: none;
-            border-radius: 10px;
-            cursor: pointer;
-            transition: all 0.3s ease;
-            box-shadow: 0 0 20px rgba(0, 255, 255, 0.5);
-            text-transform: uppercase;
-            letter-spacing: 1px;
-            pointer-events: auto;
-            user-select: none;
-            -webkit-user-select: none;
-            -webkit-touch-callout: none;
-        }
-
-        .btn-restart:hover, .btn-home:hover {
-            transform: scale(1.1);
-            box-shadow: 0 0 35px rgba(255, 0, 255, 0.7);
-        }
-
-        .btn-restart:active, .btn-home:active {
-            transform: scale(0.95);
-        }
-
-        .error-message {
-            color: #ff6699;
-            font-size: 0.9rem;
-            margin-top: 15px;
-            padding: 10px;
-            background: rgba(255, 0, 102, 0.1);
-            border-radius: 8px;
-            border: 1px solid rgba(255, 0, 102, 0.3);
-        }
-
-        ::-webkit-scrollbar {
-            width: 6px;
-        }
-
-        ::-webkit-scrollbar-track {
-            background: rgba(0, 255, 255, 0.05);
-        }
-
-        ::-webkit-scrollbar-thumb {
-            background: rgba(0, 255, 255, 0.3);
-            border-radius: 3px;
-        }
-
-        ::-webkit-scrollbar-thumb:hover {
-            background: rgba(0, 255, 255, 0.5);
-        }
-
-        @media (max-width: 480px) {
-            .modal-content h1 {
-                font-size: 2.2rem;
-            }
-
-            .gameover-text {
-                font-size: 3rem;
-            }
-
-            .judgment {
-                font-size: 2.5rem;
-            }
-
-            .block {
-                font-size: 0.7rem;
-            }
+        @media(max-width:480px){
+            .judgment { font-size:2rem; }
+            .go-title  { font-size:2.2rem; }
         }
     </style>
 </head>
 <body>
-    <div class="game-wrapper">
-        <!-- 이름 입력 모달 -->
-        <div id="nameModal">
-            <div class="modal-content">
-                <h1>STACK RUSH</h1>
-                <p>🌍 글로벌 온라인 랭킹</p>
-                <input 
-                    type="text" 
-                    id="playerNameInput" 
-                    placeholder="닉네임 입력" 
-                    maxlength="12"
-                    autocomplete="off"
-                >
-                <div class="modal-buttons">
-                    <button class="btn-start" id="btnStart">시작</button>
-                    <button class="btn-ranking" id="btnShowRanking">랭킹</button>
-                </div>
-                <div class="mini-ranking" id="miniRanking">
-                    <h3>⚡ TOP 5</h3>
-                    <div id="miniRankingList"></div>
-                    <div class="loading-text">데이터 로드 중...</div>
-                </div>
-                <div id="firebaseError"></div>
-            </div>
-        </div>
 
-        <!-- 랭킹 화면 -->
-        <div id="rankingScreen" class="hidden">
-            <div class="ranking-box">
-                <h1>🏆 TOP 20 🏆</h1>
-                <div class="full-ranking" id="fullRankingList">
-                    <div class="loading-text" style="text-align: center; padding: 20px;">데이터 로드 중...</div>
-                </div>
-                <button class="btn-back" id="btnBackFromRanking">돌아가기</button>
+    <!-- 이름 입력 화면 -->
+    <div class="screen" id="nameModal">
+        <div class="modal-content">
+            <h1>STACK RUSH</h1>
+            <div class="conn-status offline" id="connStatus">
+                <span class="conn-dot"></span>
+                <span id="connText">연결 중...</span>
             </div>
-        </div>
-
-        <!-- 게임 화면 -->
-        <div id="gameScreen" class="hidden">
-            <div class="game-header">
-                <div class="player-info" id="playerInfo"></div>
-                <div class="level-display" id="levelDisplay">1</div>
-                <button class="btn-menu" id="btnGameMenu">메뉴</button>
+            <p>🌍 전 세계 사람들과 경쟁하세요!</p>
+            <input type="text" id="playerNameInput" placeholder="닉네임 입력" maxlength="12" autocomplete="off">
+            <div class="modal-buttons">
+                <button class="btn" id="btnStart">▶ 시작</button>
+                <button class="btn" id="btnShowRanking">🏆 전체 랭킹</button>
             </div>
-            <div class="game-canvas">
-                <div class="stack-viewport" id="stackViewport"></div>
-            </div>
-        </div>
-
-        <!-- 게임 오버 화면 -->
-        <div id="gameOverScreen" class="hidden">
-            <div class="gameover-box">
-                <div class="gameover-text">🎮 게임 오버</div>
-                <div class="final-score" id="finalScore">0</div>
-                <div class="score-label">층에 도달했습니다!</div>
-                <div class="record-badge" id="recordBadge"></div>
-                <div class="gameover-ranking">
-                    <h3>🏆 글로벌 랭킹 🏆</h3>
-                    <div id="gameoverRankingList"></div>
-                </div>
-                <div class="gameover-buttons">
-                    <button class="btn-restart" id="btnRestart">다시 시작</button>
-                    <button class="btn-home" id="btnHome">메뉴로</button>
+            <div class="mini-ranking">
+                <h3>⚡ 실시간 글로벌 TOP 10</h3>
+                <div id="miniRankingList">
+                    <div class="rank-loading">🔄 랭킹 불러오는 중...</div>
                 </div>
             </div>
         </div>
     </div>
 
-    <script>
-        // ========== Firebase 초기화 ==========
-        const firebaseConfig = {
-            apiKey: "YOUR_API_KEY_HERE",
-            authDomain: "YOUR_AUTH_DOMAIN_HERE",
-            projectId: "YOUR_PROJECT_ID_HERE",
-            storageBucket: "YOUR_STORAGE_BUCKET_HERE",
-            messagingSenderId: "YOUR_MESSAGING_SENDER_ID_HERE",
-            appId: "YOUR_APP_ID_HERE"
-        };
+    <!-- 전체 랭킹 화면 -->
+    <div class="screen hidden" id="rankingScreen">
+        <div class="result-box">
+            <h1 style="color:#00ffff;margin-bottom:6px;font-size:2rem;">🏆 글로벌 랭킹</h1>
+            <p style="color:#aaa;font-size:0.82rem;margin-bottom:16px;">실시간 업데이트</p>
+            <div class="rank-box" style="max-height:55vh;">
+                <div id="fullRankingList">
+                    <div class="rank-loading">🔄 불러오는 중...</div>
+                </div>
+            </div>
+            <button class="btn" id="btnBackRanking">← 돌아가기</button>
+        </div>
+    </div>
 
-        let db = null;
-        let firebaseReady = false;
+    <!-- 게임 화면 -->
+    <div id="gameScreen" class="hidden">
+        <div class="game-header">
+            <div class="player-info" id="playerInfo"></div>
+            <div class="level-display" id="levelDisplay">1F</div>
+            <button class="btn red" id="btnMenu" style="padding:8px 14px;font-size:0.82rem;">메뉴</button>
+        </div>
+        <div id="gameCanvas">
+            <div id="viewport"></div>
+        </div>
+    </div>
 
-        // Firebase 초기화 시도
-        try {
-            firebase.initializeApp(firebaseConfig);
-            db = firebase.firestore();
-            firebaseReady = true;
-            console.log("✅ Firebase 초기화 성공!");
-        } catch (error) {
-            console.error("❌ Firebase 초기화 실패:", error);
-            showFirebaseError("Firebase 설정을 확인해주세요.");
-        }
+    <!-- 게임 오버 화면 -->
+    <div class="screen hidden" id="gameOverScreen">
+        <div class="result-box">
+            <div class="go-title">🎮 GAME OVER</div>
+            <div class="final-score" id="finalScore">0</div>
+            <div class="score-sub">층에 도달했습니다!</div>
+            <div class="badge" id="recordBadge"></div>
+            <div id="myRankBadge" class="my-rank-badge" style="display:none"></div>
+            <div class="rank-box">
+                <h3>🏆 글로벌 랭킹</h3>
+                <div id="gameoverRankingList">
+                    <div class="rank-loading">🔄 저장 중...</div>
+                </div>
+            </div>
+            <div class="action-btns">
+                <button class="btn" id="btnRestart">🔄 다시 시작</button>
+                <button class="btn red" id="btnHome">🏠 메뉴로</button>
+            </div>
+        </div>
+    </div>
 
-        function showFirebaseError(message) {
-            const errorDiv = document.getElementById('firebaseError');
-            if (errorDiv) {
-                errorDiv.innerHTML = `<div class="error-message">⚠️ ${message}</div>`;
-            }
-        }
+<script>
+/* ════════════════════════════════════
+   🔥 Firebase 설정
+════════════════════════════════════ */
+const FIREBASE_CONFIG = {
+    apiKey: "AIzaSyAztxhe1Y01ZgLoEkn8UUDVybW9cabSjiI",
+    authDomain: "hawonhandsome.firebaseapp.com",
+    projectId: "hawonhandsome",
+    storageBucket: "hawonhandsome.firebasestorage.app",
+    messagingSenderId: "645822007153",
+    appId: "1:645822007153:web:33f180b5d45685be9e18d0",
+    measurementId: "G-C3NVP21G20"
+};
 
-        // ========== 블록 데이터 구조 ==========
-        class Block {
-            constructor(left, width, level) {
-                this.left = left;
-                this.width = width;
-                this.level = level;
-            }
+/* ════════════════════════════════════
+   Firebase 초기화
+════════════════════════════════════ */
+let db        = null;
+let fbReady   = false;
+let rankUnsub = null;
 
-            get right() {
-                return this.left + this.width;
-            }
+function initFirebase() {
+    try {
+        firebase.initializeApp(FIREBASE_CONFIG);
+        db = firebase.firestore();
+        fbReady = true;
+        setConnStatus(true);
+        console.log('✅ Firebase 연결 성공');
+        startRankingListener();
+    } catch(e) {
+        setConnStatus(false);
+        console.warn('❌ Firebase 연결 실패:', e.message);
+        showNoData('miniRankingList');
+        showNoData('fullRankingList');
+    }
+}
 
-            get center() {
-                return this.left + this.width / 2;
-            }
-        }
+function setConnStatus(online) {
+    const el   = document.getElementById('connStatus');
+    const text = document.getElementById('connText');
+    if (online) {
+        el.className     = 'conn-status online';
+        text.textContent = '🌐 글로벌 서버 연결됨';
+    } else {
+        el.className     = 'conn-status offline';
+        text.textContent = '⚠️ 서버 미연결';
+    }
+}
 
-        // ========== 게임 상태 ==========
-        const gameState = {
-            playerName: '',
-            level: 1,
-            isPlaying: false,
-            gameStarted: false,
-            rankings: [],
-            stackedBlocks: [],
-            currentBlock: null,
-            currentBlockElement: null,
-            blockDuration: 3,
-            animationId: null,
-            blockStartTime: null,
-            canvasWidth: 0,
-            blockStartPosition: 100,
-            hasClicked: false,
-            minBlockWidth: 0.5,
-            realtime: null
-        };
+function showNoData(cid) {
+    const el = document.getElementById(cid);
+    if (el) el.innerHTML = '<div style="color:#aaa;text-align:center;padding:16px;">📡 서버 연결 필요</div>';
+}
 
-        // ========== DOM 요소 ==========
-        const elements = {
-            nameModal: document.getElementById('nameModal'),
-            rankingScreen: document.getElementById('rankingScreen'),
-            gameScreen: document.getElementById('gameScreen'),
-            gameOverScreen: document.getElementById('gameOverScreen'),
-            playerNameInput: document.getElementById('playerNameInput'),
-            btnStart: document.getElementById('btnStart'),
-            btnShowRanking: document.getElementById('btnShowRanking'),
-            btnBackFromRanking: document.getElementById('btnBackFromRanking'),
-            btnGameMenu: document.getElementById('btnGameMenu'),
-            btnRestart: document.getElementById('btnRestart'),
-            btnHome: document.getElementById('btnHome'),
-            playerInfo: document.getElementById('playerInfo'),
-            levelDisplay: document.getElementById('levelDisplay'),
-            stackViewport: document.getElementById('stackViewport'),
-            miniRankingList: document.getElementById('miniRankingList'),
-            fullRankingList: document.getElementById('fullRankingList'),
-            gameoverRankingList: document.getElementById('gameoverRankingList'),
-            finalScore: document.getElementById('finalScore'),
-            recordBadge: document.getElementById('recordBadge')
-        };
+/* ════════════════════════════════════
+   실시간 랭킹 리스너
+════════════════════════════════════ */
+let G_rankings = [];
 
-        // ========== Firebase Realtime 리스너 시작 ==========
-        function startRealtimeListener() {
-            if (!firebaseReady || !db) {
-                console.error("❌ Firebase가 아직 준비되지 않았습니다!");
-                showFirebaseError("Firebase 연결 대기 중...");
-                return;
-            }
+function startRankingListener() {
+    if (!fbReady) return;
+    if (rankUnsub) rankUnsub();
 
-            try {
-                if (gameState.realtime) {
-                    gameState.realtime();
+    rankUnsub = db.collection('scores')
+        .orderBy('score', 'desc')
+        .limit(20)
+        .onSnapshot(
+            snap => {
+                G_rankings = [];
+                snap.forEach(doc => {
+                    const d = doc.data();
+                    G_rankings.push({ name: d.name, score: d.score });
+                });
+                renderRanking('miniRankingList', 10);
+                if (!document.getElementById('rankingScreen').classList.contains('hidden')) {
+                    renderRanking('fullRankingList', 20);
                 }
-
-                // scores 컬렉션 쿼리: 점수 내림차순, 상위 20개
-                gameState.realtime = db.collection('scores')
-                    .orderBy('score', 'desc')
-                    .limit(20)
-                    .onSnapshot(
-                        (snapshot) => {
-                            gameState.rankings = [];
-                            snapshot.forEach((doc) => {
-                                gameState.rankings.push({
-                                    id: doc.id,
-                                    name: doc.data().name,
-                                    score: doc.data().score,
-                                    timestamp: doc.data().timestamp
-                                });
-                            });
-
-                            console.log("📊 랭킹 업데이트:", gameState.rankings.length, "개");
-
-                            // 미니 랭킹 업데이트
-                            displayRankings('miniRankingList', 5);
-                        },
-                        (error) => {
-                            console.error("❌ Firestore 쿼리 오류:", error);
-                            showFirebaseError("데이터 로드 실패: " + error.message);
-                        }
-                    );
-            } catch (error) {
-                console.error("❌ 리스너 설정 오류:", error);
-                showFirebaseError("리스너 설정 실패");
+            },
+            err => {
+                console.warn('랭킹 수신 오류:', err);
+                setConnStatus(false);
             }
-        }
+        );
+}
 
-        // ========== Firebase에 점수 저장 또는 업데이트 ==========
-        async function saveScoreToFirebase(playerName, score) {
-            if (!firebaseReady || !db) {
-                console.error("❌ Firebase가 준비되지 않았습니다!");
-                return;
-            }
+/* 점수 저장 - 닉네임당 최고기록만 */
+async function saveScore(name, score) {
+    if (!fbReady) return null;
+    try {
+        const snap = await db.collection('scores')
+            .where('name', '==', name)
+            .limit(1)
+            .get();
 
-            try {
-                // 1. 해당 이름의 기존 기록 조회
-                const querySnapshot = await db.collection('scores')
-                    .where('name', '==', playerName)
-                    .get();
-
-                if (querySnapshot.empty) {
-                    // 기존 기록이 없으면 새로 추가
-                    await db.collection('scores').add({
-                        name: playerName,
-                        score: score,
-                        timestamp: firebase.firestore.FieldValue.serverTimestamp()
-                    });
-                    console.log("✅ 새 기록 추가:", playerName, score);
-                } else {
-                    // 기존 기록이 있으면 점수 비교
-                    const existingDoc = querySnapshot.docs[0];
-                    const existingScore = existingDoc.data().score;
-
-                    if (score > existingScore) {
-                        // 현재 점수가 더 높으면 업데이트
-                        await existingDoc.ref.update({
-                            score: score,
-                            timestamp: firebase.firestore.FieldValue.serverTimestamp()
-                        });
-                        console.log("📈 기록 업데이트:", playerName, existingScore, "→", score);
-                    } else {
-                        // 현재 점수가 더 낮으면 저장 안 함
-                        console.log("⚠️  기존 기록이 더 높음. 저장 안 함.");
-                    }
-                }
-
-                // 점수 저장 후 랭킹 새로고침
-                startRealtimeListener();
-            } catch (error) {
-                console.error("❌ Firebase 저장 오류:", error);
-                showFirebaseError("점수 저장 실패: " + error.message);
-            }
-        }
-
-        // ========== 랭킹 표시 ==========
-        function displayRankings(containerId, limit = 10) {
-            const container = document.getElementById(containerId);
-            if (!container) return;
-            
-            container.innerHTML = '';
-            const items = gameState.rankings.slice(0, limit);
-            
-            if (items.length === 0) {
-                container.innerHTML = '<div style="padding: 20px; color: #aaa; text-align: center;">아직 기록이 없습니다</div>';
-                return;
-            }
-
-            items.forEach((ranking, idx) => {
-                const item = document.createElement('div');
-                item.className = 'rank-item';
-                const isCurrentPlayer = ranking.name === gameState.playerName;
-                if (isCurrentPlayer) {
-                    item.classList.add('current-player', 'current');
-                }
-                item.innerHTML = `
-                    <span class="rank-num">#${idx + 1}</span>
-                    <span class="rank-name">${ranking.name}${isCurrentPlayer ? ' 👤' : ''}</span>
-                    <span class="rank-score">${ranking.score}</span>
-                `;
-                container.appendChild(item);
+        if (snap.empty) {
+            await db.collection('scores').add({
+                name,
+                score,
+                ts: firebase.firestore.FieldValue.serverTimestamp()
             });
-        }
-
-        // ========== 네비게이션 ==========
-        function showHome() {
-            elements.nameModal.classList.remove('hidden');
-            elements.gameScreen.classList.add('hidden');
-            elements.gameOverScreen.classList.add('hidden');
-            elements.rankingScreen.classList.add('hidden');
-            if (gameState.animationId) cancelAnimationFrame(gameState.animationId);
-            displayRankings('miniRankingList', 5);
-        }
-
-        function startGame() {
-            const name = elements.playerNameInput.value.trim();
-            if (!name) {
-                alert('이름을 입력해주세요!');
-                return;
-            }
-            gameState.playerName = name;
-            elements.nameModal.classList.add('hidden');
-            elements.gameScreen.classList.remove('hidden');
-            elements.playerInfo.textContent = `${gameState.playerName}`;
-            initGame();
-        }
-
-        function showRanking() {
-            elements.nameModal.classList.add('hidden');
-            elements.rankingScreen.classList.remove('hidden');
-            displayRankings('fullRankingList', 20);
-        }
-
-        // ========== 버튼 이벤트 ==========
-        elements.btnStart.addEventListener('click', startGame);
-        elements.btnShowRanking.addEventListener('click', showRanking);
-        elements.btnBackFromRanking.addEventListener('click', showHome);
-        
-        elements.btnGameMenu.addEventListener('click', () => {
-            if (gameState.isPlaying) {
-                if (confirm('게임을 포기하시겠습니까?')) {
-                    showHome();
-                }
-            } else {
-                showHome();
-            }
-        });
-
-        elements.btnRestart.addEventListener('click', (e) => {
-            e.preventDefault();
-            e.stopPropagation();
-            elements.gameOverScreen.classList.add('hidden');
-            elements.gameScreen.classList.remove('hidden');
-            initGame();
-        });
-
-        elements.btnHome.addEventListener('click', (e) => {
-            e.preventDefault();
-            e.stopPropagation();
-            showHome();
-        });
-
-        elements.playerNameInput.addEventListener('keypress', (e) => {
-            if (e.key === 'Enter' && elements.playerNameInput.value.trim()) {
-                startGame();
-            }
-        });
-
-        // ========== 게임 초기화 ==========
-        function initGame() {
-            gameState.level = 1;
-            gameState.isPlaying = false;
-            gameState.gameStarted = true;
-            gameState.stackedBlocks = [];
-            gameState.hasClicked = false;
-            elements.levelDisplay.textContent = '1';
-            elements.stackViewport.innerHTML = '';
-
-            gameState.canvasWidth = elements.stackViewport.offsetWidth;
-
-            const firstBlock = new Block(0, 100, 1);
-            gameState.stackedBlocks.push(firstBlock);
-            renderBlock(firstBlock, 1, false);
-
-            setTimeout(() => {
-                gameState.level = 2;
-                elements.levelDisplay.textContent = '2';
-                startNewBlock();
-            }, 600);
-        }
-
-        // ========== 뷰포트 자동 스크롤 ==========
-        function autoScrollViewport() {
-            const viewport = elements.stackViewport;
-            const targetScroll = Math.max(0, viewport.scrollHeight - viewport.clientHeight - 100);
-            
-            viewport.scrollTo({
-                top: targetScroll,
-                behavior: 'smooth'
-            });
-        }
-
-        // ========== 블록 렌더링 ==========
-        function renderBlock(block, level, isMoving) {
-            const row = document.createElement('div');
-            row.className = 'block-row';
-            row.setAttribute('data-level', level);
-
-            const blockEl = document.createElement('div');
-            blockEl.className = 'block' + (isMoving ? ' moving' : '');
-            blockEl.textContent = level;
-
-            const widthPercent = block.width;
-            const widthPx = (widthPercent / 100) * gameState.canvasWidth;
-            blockEl.style.width = widthPx + 'px';
-
-            if (isMoving) {
-                blockEl.style.setProperty('--duration', gameState.blockDuration + 's');
-                blockEl.style.setProperty('--width', widthPx + 'px');
-            } else {
-                const leftPercent = (block.left / 100) * gameState.canvasWidth;
-                blockEl.style.left = leftPercent + 'px';
-            }
-
-            row.appendChild(blockEl);
-            elements.stackViewport.appendChild(row);
-
-            return { row, blockEl };
-        }
-
-        // ========== 새 블록 시작 ==========
-        function startNewBlock() {
-            const prevBlock = gameState.stackedBlocks[gameState.stackedBlocks.length - 1];
-            const newWidth = prevBlock.width;
-
-            gameState.currentBlock = new Block(0, newWidth, gameState.level);
-            gameState.blockDuration = Math.max(1.5, 3 - (gameState.level - 2) * 0.1);
-            gameState.blockStartPosition = 100;
-            gameState.hasClicked = false;
-
-            const { blockEl } = renderBlock(gameState.currentBlock, gameState.level, true);
-            gameState.currentBlockElement = blockEl;
-
-            gameState.isPlaying = true;
-            gameState.blockStartTime = performance.now();
-
-            animateBlock();
-        }
-
-        function animateBlock() {
-            if (!gameState.isPlaying || !gameState.currentBlockElement) return;
-
-            const elapsed = (performance.now() - gameState.blockStartTime) / 1000;
-            const progress = elapsed / gameState.blockDuration;
-
-            if (progress >= 1 && gameState.hasClicked) {
-                handleMissed();
-                return;
-            }
-
-            gameState.animationId = requestAnimationFrame(animateBlock);
-        }
-
-        // ========== 초정밀 클릭 위치 계산 ==========
-        function calculatePreciseBlockPosition(clickTime) {
-            const totalDuration = gameState.blockDuration;
-            const elapsedSinceStart = (clickTime - gameState.blockStartTime) / 1000;
-            
-            if (elapsedSinceStart >= totalDuration) {
-                return 110;
-            }
-
-            const totalDistance = 110;
-            const traveledDistance = (elapsedSinceStart / totalDuration) * totalDistance;
-            const currentPosition = 100 - traveledDistance;
-
-            return Math.max(-10, Math.min(100, currentPosition));
-        }
-
-        // ========== 수학적 커팅 함수 ==========
-        function performPrecisionCutting(currentLeftPercent, currentWidthPercent, bottomBlock) {
-            const bottomLeft = bottomBlock.left;
-            const bottomWidth = bottomBlock.width;
-            const bottomRight = bottomLeft + bottomWidth;
-            const currentLeft = currentLeftPercent;
-            const currentRight = currentLeft + currentWidthPercent;
-
-            const overlapLeft = Math.max(currentLeft, bottomLeft);
-            const overlapRight = Math.min(currentRight, bottomRight);
-            const overlapWidth = overlapRight - overlapLeft;
-
-            if (overlapWidth <= 0) {
-                return null;
-            }
-
-            let newWidth = currentWidthPercent;
-            let newLeft = currentLeft;
-
-            if (currentLeft < bottomLeft) {
-                const leftOver = bottomLeft - currentLeft;
-                newWidth = newWidth - leftOver;
-                newLeft = bottomLeft;
-            }
-
-            if (currentRight > bottomRight) {
-                const rightOver = currentRight - bottomRight;
-                newWidth = newWidth - rightOver;
-            }
-
-            if (newWidth <= gameState.minBlockWidth) {
-                return null;
-            }
-
-            return {
-                left: newLeft,
-                width: newWidth
-            };
-        }
-
-        // ========== 터치/클릭 판정 ==========
-        function judgeBlock(inputTime) {
-            if (!gameState.gameStarted) return;
-
-            gameState.hasClicked = true;
-
-            if (!gameState.isPlaying || !gameState.currentBlock) return;
-
-            gameState.isPlaying = false;
-            if (gameState.animationId) cancelAnimationFrame(gameState.animationId);
-
-            const precisePosition = calculatePreciseBlockPosition(inputTime);
-
-            if (precisePosition >= 100 || precisePosition <= -10) {
-                handleMissed();
-                return;
-            }
-
-            gameState.currentBlock.left = precisePosition;
-
-            const prevBlock = gameState.stackedBlocks[gameState.stackedBlocks.length - 1];
-
-            const cuttingResult = performPrecisionCutting(
-                gameState.currentBlock.left,
-                gameState.currentBlock.width,
-                prevBlock
-            );
-
-            if (cuttingResult === null) {
-                const leftPx = (precisePosition / 100) * gameState.canvasWidth;
-                gameState.currentBlockElement.style.left = leftPx + 'px';
-                gameState.currentBlockElement.classList.add('stopped');
-                gameState.currentBlockElement.classList.remove('moving');
-                handleMissed();
-                return;
-            }
-
-            gameState.currentBlock.left = cuttingResult.left;
-            gameState.currentBlock.width = cuttingResult.width;
-
-            const leftPx = (cuttingResult.left / 100) * gameState.canvasWidth;
-            const widthPx = (cuttingResult.width / 100) * gameState.canvasWidth;
-            gameState.currentBlockElement.style.left = leftPx + 'px';
-            gameState.currentBlockElement.style.width = widthPx + 'px';
-            gameState.currentBlockElement.classList.add('stopped');
-            gameState.currentBlockElement.classList.remove('moving');
-
-            if (Math.abs(gameState.currentBlock.left - prevBlock.left) <= 1.5 &&
-                Math.abs(gameState.currentBlock.right - prevBlock.right) <= 1.5) {
-                handlePerfect(gameState.currentBlock);
-            } else {
-                handleCutting(gameState.currentBlock);
-            }
-        }
-
-        function handlePerfect(block) {
-            showJudgment('⚡ PERFECT!', 'perfect');
-            gameState.currentBlockElement.classList.add('perfect');
-            flashScreen('rgba(0, 255, 255, 0.4)');
-
-            gameState.stackedBlocks.push(block);
-
-            setTimeout(() => {
-                gameState.level++;
-                elements.levelDisplay.textContent = gameState.level;
-                
-                autoScrollViewport();
-                
-                startNewBlock();
-            }, 500);
-        }
-
-        function handleCutting(cuttedBlock) {
-            showJudgment('✂ CUT!', 'cutting');
-            gameState.currentBlockElement.classList.add('cutting');
-            flashScreen('rgba(255, 170, 0, 0.3)');
-
-            gameState.stackedBlocks.push(cuttedBlock);
-
-            setTimeout(() => {
-                if (cuttedBlock.width <= gameState.minBlockWidth) {
-                    handleGameOver();
-                } else {
-                    gameState.level++;
-                    elements.levelDisplay.textContent = gameState.level;
-                    
-                    autoScrollViewport();
-                    
-                    startNewBlock();
-                }
-            }, 500);
-        }
-
-        function handleMissed() {
-            showJudgment('✖ MISS!', 'miss');
-            gameState.currentBlockElement.classList.add('gameover');
-            flashScreen('rgba(255, 0, 102, 0.5)');
-
-            setTimeout(() => {
-                handleGameOver();
-            }, 700);
-        }
-
-        function handleGameOver() {
-            gameState.isPlaying = false;
-            if (gameState.animationId) cancelAnimationFrame(gameState.animationId);
-
-            setTimeout(() => {
-                const finalScore = gameState.level - 1;
-                saveScoreToFirebase(gameState.playerName, finalScore);
-                showGameOverScreen();
-            }, 300);
-        }
-
-        // ========== 게임 오버 화면 ==========
-        function showGameOverScreen() {
-            elements.gameScreen.classList.add('hidden');
-            elements.gameOverScreen.classList.remove('hidden');
-
-            const finalLevel = gameState.level - 1;
-            elements.finalScore.textContent = finalLevel;
-
-            const playerRecord = gameState.rankings.find(r => r.name === gameState.playerName);
-            if (playerRecord && playerRecord.score === finalLevel) {
-                elements.recordBadge.className = 'record-badge new';
-                elements.recordBadge.innerHTML = '🎉 새로운 최고 기록!<br><span style="font-size: 0.9rem; margin-top: 5px;">축하합니다!</span>';
-            } else {
-                elements.recordBadge.className = 'record-badge old';
-                elements.recordBadge.innerHTML = '💪 도전을 계속해보세요!';
-            }
-
-            displayRankings('gameoverRankingList', 20);
-        }
-
-        // ========== 연출 ==========
-        function showJudgment(text, type) {
-            const judgment = document.createElement('div');
-            judgment.className = `judgment ${type}`;
-            judgment.textContent = text;
-            document.body.appendChild(judgment);
-            setTimeout(() => judgment.remove(), 800);
-        }
-
-        function flashScreen(color) {
-            const flash = document.createElement('div');
-            flash.className = 'screen-flash';
-            flash.style.background = color;
-            document.body.appendChild(flash);
-            setTimeout(() => flash.remove(), 250);
-        }
-
-        // ========== 초정밀 입력 이벤트 ==========
-        document.addEventListener('mousedown', (e) => {
-            if (gameState.gameStarted && gameState.isPlaying) {
-                e.preventDefault();
-                const clickTime = performance.now();
-                judgeBlock(clickTime);
-            }
-        }, true);
-
-        document.addEventListener('touchstart', (e) => {
-            if (gameState.gameStarted && gameState.isPlaying) {
-                e.preventDefault();
-                const clickTime = performance.now();
-                judgeBlock(clickTime);
-            }
-        }, { passive: false, capture: true });
-
-        document.addEventListener('keydown', (e) => {
-            if ((e.code === 'Space' || e.key === ' ') && gameState.gameStarted && gameState.isPlaying) {
-                e.preventDefault();
-                const clickTime = performance.now();
-                judgeBlock(clickTime);
-            }
-        }, true);
-
-        // ========== 초기화 ==========
-        if (firebaseReady) {
-            startRealtimeListener();
         } else {
-            console.warn("⚠️  Firebase가 준비되지 않았습니다. 설정을 확인하세요.");
-            setTimeout(() => {
-                startRealtimeListener();
-            }, 2000);
+            const doc = snap.docs[0];
+            if (score > doc.data().score) {
+                await doc.ref.update({
+                    score,
+                    ts: firebase.firestore.FieldValue.serverTimestamp()
+                });
+            }
         }
-    </script>
+        return true;
+    } catch(e) {
+        console.warn('점수 저장 실패:', e);
+        return false;
+    }
+}
+
+/* 랭킹 렌더링 */
+function renderRanking(cid, limit) {
+    const el = document.getElementById(cid);
+    if (!el) return;
+
+    const list = G_rankings.slice(0, limit);
+
+    if (!list.length) {
+        el.innerHTML = `
+            <div style="color:#aaa;text-align:center;padding:20px;">
+                <div style="font-size:2rem;margin-bottom:8px;">🏆</div>
+                <div>아직 기록이 없습니다</div>
+                <div style="font-size:0.78rem;margin-top:6px;color:#666;">첫 번째 도전자가 되세요!</div>
+            </div>`;
+        return;
+    }
+
+    const medals   = ['🥇','🥈','🥉'];
+    const numClass = ['top1','top2','top3'];
+
+    el.innerHTML = list.map((r, i) => {
+        const isMe  = r.name === G.name;
+        const medal = i < 3 ? medals[i] : `#${i+1}`;
+        const cls   = i < 3 ? numClass[i] : '';
+        return `
+            <div class="rank-item ${isMe ? 'me' : ''}">
+                <span class="rank-num ${cls}">${medal}</span>
+                <span class="rank-name">${escapeHtml(r.name)}${isMe ? ' 👤' : ''}</span>
+                <span class="rank-score">${r.score}F</span>
+            </div>`;
+    }).join('');
+}
+
+function getMyRank(name) {
+    const idx = G_rankings.findIndex(r => r.name === name);
+    return idx === -1 ? null : idx + 1;
+}
+
+function escapeHtml(str) {
+    return str.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+}
+
+/* ════════════════════════════════════
+   게임 상수
+════════════════════════════════════ */
+const BLOCK_H  = 48;
+const CAM_PAD  = 5;
+const MIN_W    = 6;
+const SPD_INIT = 130;
+const SPD_MAX  = 340;
+const SPD_INC  = 7;
+
+/* ════════════════════════════════════
+   게임 상태
+════════════════════════════════════ */
+const G = {
+    name:'', level:1,
+    playing:false, started:false,
+    stack:[],
+    movEl:null,
+    movLeft:0, movDir:-1,
+    movWidth:0, movSpeed:SPD_INIT,
+    movRAF:null, movPrevT:null,
+    camY:0, camTarget:0, camRAF:null,
+    cW:0, cH:0, vpH:0,
+};
+
+const vp = document.getElementById('viewport');
+const gc = document.getElementById('gameCanvas');
+
+/* ════════════════════════════════════
+   좌표
+════════════════════════════════════ */
+function layerTop(level) { return G.vpH - level * BLOCK_H; }
+function calcVpH()       { return G.cH + (G.level + CAM_PAD + 2) * BLOCK_H; }
+
+/* ════════════════════════════════════
+   화면 전환
+════════════════════════════════════ */
+const SCREENS = ['nameModal','rankingScreen','gameScreen','gameOverScreen'];
+function showOnly(id) {
+    SCREENS.forEach(s => document.getElementById(s).classList.add('hidden'));
+    document.getElementById(id).classList.remove('hidden');
+}
+function goHome() {
+    stopMov(); stopCam();
+    G.playing = false; G.started = false;
+    showOnly('nameModal');
+}
+
+/* ════════════════════════════════════
+   게임 시작
+════════════════════════════════════ */
+function startGame() {
+    const name = document.getElementById('playerNameInput').value.trim();
+    if (!name) { alert('닉네임을 입력해주세요!'); return; }
+    G.name = name;
+    document.getElementById('playerInfo').textContent = '👤 ' + name;
+    showOnly('gameScreen');
+    initGame();
+}
+
+function initGame() {
+    stopMov(); stopCam();
+    G.level=1; G.playing=false; G.started=true;
+    G.stack=[]; G.movSpeed=SPD_INIT;
+    G.camY=0; G.camTarget=0;
+
+    G.cW = gc.offsetWidth;
+    G.cH = gc.offsetHeight;
+    G.vpH = calcVpH();
+
+    vp.style.height    = G.vpH + 'px';
+    vp.innerHTML       = '';
+    vp.style.transform = 'translateY(0)';
+    document.getElementById('levelDisplay').textContent = '1F';
+
+    const first = { left:0, width:G.cW };
+    G.stack.push(first);
+    createFixedBlock(first, 1);
+
+    G.camY      = G.cH - G.vpH;
+    G.camTarget = G.camY;
+    applyCamera();
+
+    setTimeout(() => {
+        G.level = 2;
+        document.getElementById('levelDisplay').textContent = '2F';
+        spawnMoving();
+    }, 400);
+}
+
+/* ════════════════════════════════════
+   블록 생성
+════════════════════════════════════ */
+function createFixedBlock(data, level) {
+    const el = document.createElement('div');
+    el.className     = 'block';
+    el.dataset.level = level;
+    const hue = (level * 37) % 360;
+    el.style.background = `linear-gradient(90deg,hsl(${hue},100%,55%),hsl(${(hue+60)%360},100%,60%))`;
+    el.style.left   = data.left + 'px';
+    el.style.width  = data.width + 'px';
+    el.style.height = (BLOCK_H - 8) + 'px';
+    el.style.top    = layerTop(level) + 'px';
+    el.textContent  = level + 'F';
+    vp.appendChild(el);
+    return el;
+}
+
+/* ════════════════════════════════════
+   움직이는 블록
+════════════════════════════════════ */
+function spawnMoving() {
+    const prev = G.stack[G.stack.length - 1];
+    G.movWidth = prev.width;
+    G.movDir   = -1;
+    G.movLeft  = G.cW;
+    G.movPrevT = null;
+
+    const el = document.createElement('div');
+    el.className = 'block';
+    el.id = 'movingBlock';
+    const hue = (G.level * 37) % 360;
+    el.style.background = `linear-gradient(90deg,hsl(${hue},100%,55%),hsl(${(hue+60)%360},100%,60%))`;
+    el.style.width  = G.movWidth + 'px';
+    el.style.height = (BLOCK_H - 8) + 'px';
+    el.style.left   = G.movLeft + 'px';
+    el.style.top    = layerTop(G.level) + 'px';
+    el.textContent  = G.level + 'F';
+    vp.appendChild(el);
+
+    G.movEl   = el;
+    G.playing = true;
+
+    updateCamera();
+    G.movRAF = requestAnimationFrame(movLoop);
+}
+
+function movLoop(ts) {
+    if (!G.playing) return;
+    if (G.movPrevT === null) G.movPrevT = ts;
+    const dt = Math.min((ts - G.movPrevT) / 1000, 0.05);
+    G.movPrevT = ts;
+
+    G.movLeft += G.movDir * G.movSpeed * dt;
+
+    if (G.movLeft < -G.movWidth) { G.movLeft = -G.movWidth; G.movDir = 1; }
+    if (G.movLeft > G.cW)        { G.movLeft = G.cW;        G.movDir = -1; }
+
+    G.movEl.style.left = G.movLeft + 'px';
+    G.movRAF = requestAnimationFrame(movLoop);
+}
+
+function stopMov() {
+    if (G.movRAF) { cancelAnimationFrame(G.movRAF); G.movRAF = null; }
+}
+
+/* ════════════════════════════════════
+   카메라
+════════════════════════════════════ */
+function updateCamera() {
+    const newVpH = calcVpH();
+    if (newVpH > G.vpH) {
+        G.vpH = newVpH;
+        vp.style.height = G.vpH + 'px';
+        rebuildTops();
+    }
+    G.camTarget = CAM_PAD * BLOCK_H - layerTop(G.level);
+    smoothCamera();
+}
+
+function rebuildTops() {
+    vp.querySelectorAll('.block').forEach(el => {
+        const lv = parseInt(el.dataset.level || 0);
+        if (lv > 0) el.style.top = layerTop(lv) + 'px';
+    });
+    const mv = document.getElementById('movingBlock');
+    if (mv) mv.style.top = layerTop(G.level) + 'px';
+}
+
+function applyCamera()  { vp.style.transform = `translateY(${G.camY}px)`; }
+
+function smoothCamera() {
+    stopCam();
+    function tick() {
+        const diff = G.camTarget - G.camY;
+        if (Math.abs(diff) < 0.3) { G.camY = G.camTarget; applyCamera(); return; }
+        G.camY += diff * 0.14;
+        applyCamera();
+        G.camRAF = requestAnimationFrame(tick);
+    }
+    G.camRAF = requestAnimationFrame(tick);
+}
+
+function stopCam() {
+    if (G.camRAF) { cancelAnimationFrame(G.camRAF); G.camRAF = null; }
+}
+
+/* ════════════════════════════════════
+   판정
+════════════════════════════════════ */
+function judge() {
+    if (!G.started || !G.playing || !G.movEl) return;
+    G.playing = false;
+    stopMov();
+
+    const cur  = { left: G.movLeft, width: G.movWidth };
+    const prev = G.stack[G.stack.length - 1];
+
+    const ol = Math.max(cur.left, prev.left);
+    const or = Math.min(cur.left + cur.width, prev.left + prev.width);
+    const ow = or - ol;
+
+    if (ow <= 0) {
+        showJudgment('✖ MISS!', 'miss');
+        flashScreen('rgba(255,0,80,0.45)');
+        triggerGameOver();
+        return;
+    }
+
+    const cutted    = { left: ol, width: ow };
+    const isPerfect = Math.abs(ol - prev.left) <= 2
+                   && Math.abs(or - (prev.left + prev.width)) <= 2;
+
+    if (isPerfect) {
+        cutted.left  = prev.left;
+        cutted.width = prev.width;
+        showJudgment('⚡ PERFECT!', 'perfect');
+        flashScreen('rgba(0,255,255,0.3)');
+    } else {
+        showJudgment('✂ CUT!', 'cut');
+        flashScreen('rgba(255,170,0,0.2)');
+        spawnDebris(cur, cutted);
+    }
+
+    G.movEl.id            = '';
+    G.movEl.dataset.level = G.level;
+    G.movEl.style.left    = cutted.left  + 'px';
+    G.movEl.style.width   = cutted.width + 'px';
+    G.movEl = null;
+
+    G.stack.push(cutted);
+    G.level++;
+    document.getElementById('levelDisplay').textContent = G.level + 'F';
+    G.movSpeed = Math.min(SPD_MAX, G.movSpeed + SPD_INC);
+
+    if (cutted.width <= MIN_W) { triggerGameOver(); return; }
+
+    setTimeout(() => spawnMoving(), 350);
+}
+
+/* ════════════════════════════════════
+   파편 효과
+════════════════════════════════════ */
+function spawnDebris(cur, cutted) {
+    const gcRect  = gc.getBoundingClientRect();
+    const blockTop = layerTop(G.level) + G.camY + gcRect.top;
+
+    function makeParticles(startX, dir) {
+        for (let i = 0; i < 5; i++) {
+            const p  = document.createElement('div');
+            p.className = 'debris';
+            const sz = 5 + Math.random() * 10;
+            p.style.width  = sz + 'px';
+            p.style.height = sz + 'px';
+            const hue = (G.level * 37) % 360;
+            p.style.background = `hsl(${hue},100%,60%)`;
+            p.style.left = (gcRect.left + startX + Math.random() * 20 * dir) + 'px';
+            p.style.top  = (blockTop + 3 + Math.random() * 30) + 'px';
+            const dx = dir * (30 + Math.random() * 70);
+            const dy = 40 + Math.random() * 80;
+            const r  = dir * (15 + Math.random() * 45);
+            const t  = 0.5 + Math.random() * 0.4;
+            p.style.setProperty('--dx', dx + 'px');
+            p.style.setProperty('--dy', dy + 'px');
+            p.style.setProperty('--r',  r  + 'deg');
+            p.style.setProperty('--t',  t  + 's');
+            document.body.appendChild(p);
+            setTimeout(() => p.remove(), t * 1000 + 100);
+        }
+    }
+
+    if (cur.left < cutted.left)
+        makeParticles(cur.left, -1);
+    if (cur.left + cur.width > cutted.left + cutted.width)
+        makeParticles(cutted.left + cutted.width, 1);
+}
+
+/* ════════════════════════════════════
+   게임 오버
+════════════════════════════════════ */
+async function triggerGameOver() {
+    G.playing = false; G.started = false;
+    stopMov(); stopCam();
+
+    const score = G.level - 1;
+
+    // Firebase에 점수 저장
+    await saveScore(G.name, score);
+
+    // 랭킹 갱신 대기
+    setTimeout(() => {
+        showOnly('gameOverScreen');
+        document.getElementById('finalScore').textContent = score;
+
+        // 최고기록 뱃지
+        const best  = G_rankings.find(r => r.name === G.name);
+        const badge = document.getElementById('recordBadge');
+        if (!best || score >= best.score) {
+            badge.className   = 'badge new';
+            badge.textContent = '🎉 새로운 최고 기록!';
+        } else {
+            badge.className   = 'badge old';
+            badge.textContent = `💪 내 최고기록: ${best.score}F`;
+        }
+
+        // 내 순위
+        const myRankEl = document.getElementById('myRankBadge');
+        const myRank   = getMyRank(G.name);
+        if (myRank) {
+            myRankEl.style.display = 'block';
+            myRankEl.textContent   = `🎯 현재 내 순위: ${myRank}위`;
+        } else {
+            myRankEl.style.display = 'none';
+        }
+
+        renderRanking('gameoverRankingList', 20);
+    }, 1200);
+}
+
+/* ════════════════════════════════════
+   연출
+════════════════════════════════════ */
+function showJudgment(text, type) {
+    const j = document.createElement('div');
+    j.className   = `judgment ${type}`;
+    j.textContent = text;
+    document.body.appendChild(j);
+    setTimeout(() => j.remove(), 750);
+}
+
+function flashScreen(color) {
+    const f = document.createElement('div');
+    f.className        = 'flash';
+    f.style.background = color;
+    document.body.appendChild(f);
+    setTimeout(() => f.remove(), 250);
+}
+
+/* ════════════════════════════════════
+   입력 이벤트
+════════════════════════════════════ */
+document.addEventListener('mousedown', e => {
+    if (G.started && G.playing) { e.preventDefault(); judge(); }
+}, true);
+
+document.addEventListener('touchstart', e => {
+    if (G.started && G.playing) { e.preventDefault(); judge(); }
+}, { passive:false, capture:true });
+
+document.addEventListener('keydown', e => {
+    if ((e.code === 'Space' || e.key === ' ') && G.started && G.playing) {
+        e.preventDefault(); judge();
+    }
+}, true);
+
+/* ════════════════════════════════════
+   버튼 이벤트
+════════════════════════════════════ */
+document.getElementById('btnStart').addEventListener('click', startGame);
+
+document.getElementById('btnShowRanking').addEventListener('click', () => {
+    showOnly('rankingScreen');
+    renderRanking('fullRankingList', 20);
+});
+
+document.getElementById('btnBackRanking').addEventListener('click', goHome);
+
+document.getElementById('btnMenu').addEventListener('click', () => {
+    if (!G.playing || confirm('게임을 포기하시겠습니까?')) goHome();
+});
+
+document.getElementById('btnRestart').addEventListener('click', () => {
+    showOnly('gameScreen');
+    initGame();
+});
+
+document.getElementById('btnHome').addEventListener('click', goHome);
+
+document.getElementById('playerNameInput').addEventListener('keypress', e => {
+    if (e.key === 'Enter') startGame();
+});
+
+/* ════════════════════════════════════
+   앱 시작
+════════════════════════════════════ */
+window.addEventListener('load', () => {
+    initFirebase();
+});
+</script>
 </body>
 </html>
