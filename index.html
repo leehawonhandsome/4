@@ -136,22 +136,38 @@
 .battle-timer { font-size: 28px; font-weight: 900; color: #fff; transition: color .3s; }
 .battle-timer.danger { color: #ff4b2b; animation: pulse .5s infinite; }
 .battle-round { font-size: 11px; color: #aaa; }
-.battle-arena { display: flex; flex: 1; overflow: hidden; }
+.battle-arena { display: flex; flex: 1; overflow: hidden; min-height: 0; }
 .battle-pane {
-  flex: 1; display: flex; flex-direction: column; align-items: center;
+  flex: 1; display: flex; flex-direction: column;
   position: relative; border-right: 1px solid #333;
+  overflow: hidden; min-width: 0;
 }
 .battle-pane:last-child { border-right: none; }
-.pane-label { font-size: 11px; color: #aaa; padding: 3px 0; background: #111; width: 100%; text-align: center; }
-.battle-game-area { width: 100%; flex: 1; position: relative; overflow: hidden; background: #0d0d1a; }
-.opponent-area { display: flex; flex-direction: column; align-items: center; justify-content: flex-end; padding-bottom: 10px; }
-.opp-stack-viz { width: 60%; display: flex; flex-direction: column-reverse; gap: 2px; align-items: center; }
-.opp-block { height: 8px; background: linear-gradient(90deg,#00c6ff,#0072ff); border-radius: 2px; transition: width .3s; }
-.opp-floor-num {
-  font-size: 64px; font-weight: 900; color: #00c6ff44;
-  position: absolute; top: 50%; left: 50%; transform: translate(-50%,-50%);
+.pane-label {
+  font-size: 12px; color: #aaa; padding: 5px 0;
+  background: #111; width: 100%; text-align: center; flex-shrink: 0;
 }
-.opp-status { font-size: 14px; color: #aaa; margin-top: 8px; }
+.battle-game-area {
+  width: 100%; flex: 1; position: relative;
+  overflow: hidden; background: #0d0d1a; min-height: 0;
+}
+.opponent-area {
+  display: flex; flex-direction: column;
+  align-items: center; justify-content: center;
+  gap: 14px; padding: 16px;
+}
+.opp-stack-viz {
+  width: 75%; display: flex; flex-direction: column-reverse;
+  gap: 3px; align-items: center; max-height: 200px; overflow: hidden;
+}
+.opp-block {
+  height: 10px; border-radius: 3px; transition: width .3s;
+}
+.opp-floor-num {
+  font-size: 80px; font-weight: 900; color: #00c6ff;
+  text-shadow: 0 0 40px #00c6ff60; line-height: 1;
+}
+.opp-status { font-size: 14px; color: #aaa; margin-top: 4px; }
 .battle-chat-box.ingame { max-height: 160px; background: #0a0a12; border-top: 1px solid #222; flex-shrink: 0; }
 #roundResultScreen {
   display: flex; flex-direction: column; align-items: center;
@@ -622,17 +638,24 @@ body { display:flex; justify-content:center; align-items:center; }
   </div>
   <div class="battle-arena">
     <div class="battle-pane">
-      <div class="pane-label">나</div>
-      <div id="myBattleArea" class="battle-game-area"></div>
-    </div>
-    <div class="battle-pane">
-      <div class="pane-label" id="opponentPaneLabel">상대</div>
-      <div id="opponentBattleArea" class="battle-game-area opponent-area">
-        <div id="opponentStackViz" class="opp-stack-viz"></div>
-        <div id="opponentStatus" class="opp-status"></div>
-      </div>
-    </div>
+  <div class="pane-label">나</div>
+  <div id="myBattleArea" class="battle-game-area"></div>
+</div>
+
+<div class="battle-pane">
+  <div class="pane-label" id="opponentPaneLabel">상대</div>
+  <div id="opponentBattleArea" class="battle-game-area opponent-area">
+    <div id="oppFloorBig"
+      style="font-size:80px;font-weight:900;color:#00c6ff;
+             text-shadow:0 0 40px #00c6ff60;line-height:1;">0F</div>
+    <div id="opponentStatus" class="opp-status">대기 중...</div>
+    <canvas id="oppStackCanvas" width="120" height="200"
+      style="border-radius:4px;"></canvas>
   </div>
+</div>
+  </div>
+</div>
+</div>
   <div class="battle-chat-box ingame">
     <div class="chat-msgs" id="ingameChatMsgs"></div>
     <div class="chat-input-row">
@@ -1550,30 +1573,45 @@ function initGame(){
 }
 function initBattleGame(){
   const area=document.getElementById('myBattleArea');
-  area.innerHTML='';G.stack=[];G.level=1;G.playing=true;G.started=true;
+  area.innerHTML='';
+  G.stack=[];G.level=1;G.playing=true;G.started=true;
   G.movSpeed=SPD_INIT;G.hasEntered=false;BATTLE.myFloor=0;
-  const origArea=document.getElementById('gameArea');
-  origArea._origParent=origArea.parentNode;origArea._origSibling=origArea.nextSibling;
-  area.appendChild(origArea);
-  G.cW=origArea.offsetWidth||GAME_W;G.cH=origArea.offsetHeight||600;
-  G.gameW=Math.min(G.cW,GAME_W);G.gameOff=Math.max(0,Math.floor((G.cW-G.gameW)/2));
-  G.vpH=calcVpH();vp.style.height=G.vpH+'px';vp.innerHTML='';vp.style.transform='translateY(0)';
-  updateGameArea();updateSpeedHud();
-  document.getElementById('levelDisplay').textContent='1F';
-  const first={left:G.gameOff,width:G.gameW};G.stack.push(first);createFixedBlock(first,1);
-  G.camY=G.cH-G.vpH;G.camTarget=G.camY;applyCamera();
-  BATTLE._floorWatcher=setInterval(()=>{
-    const floor=G.level-1;
-    if(floor!==BATTLE.myFloor){BATTLE.myFloor=floor;syncMyFloor(floor);updateBattleFloorDisplay();}
-  },500);
-  setTimeout(()=>{G.level=2;document.getElementById('levelDisplay').textContent='2F';spawnMoving();},400);
+
+  // gameCanvas 전체를 myBattleArea로 이동 (viewport, blocks 모두 포함)
+  const gcEl=document.getElementById('gameCanvas');
+  gcEl._origParent=gcEl.parentNode;
+  gcEl._origSibling=gcEl.nextSibling;
+  gcEl.style.cssText='flex:1;width:100%;min-height:0;position:relative;overflow:hidden;background:linear-gradient(180deg,#0a0e27,#111830);display:flex;flex-direction:column;';
+  area.appendChild(gcEl);
+
+  requestAnimationFrame(()=>{
+    G.cW=gcEl.offsetWidth||200;
+    G.cH=gcEl.offsetHeight||400;
+    G.gameW=Math.min(G.cW,GAME_W);
+    G.gameOff=Math.max(0,Math.floor((G.cW-G.gameW)/2));
+    G.vpH=calcVpH();
+    vp.style.height=G.vpH+'px';
+    vp.innerHTML='';
+    vp.style.transform='translateY(0)';
+    updateGameArea();updateSpeedHud();
+    const first={left:G.gameOff,width:G.gameW};
+    G.stack.push(first);createFixedBlock(first,1);
+    G.camY=G.cH-G.vpH;G.camTarget=G.camY;applyCamera();
+    BATTLE._floorWatcher=setInterval(()=>{
+      const floor=G.level-1;
+      if(floor!==BATTLE.myFloor){BATTLE.myFloor=floor;syncMyFloor(floor);updateBattleFloorDisplay();}
+    },500);
+    setTimeout(()=>{G.level=2;spawnMoving();},400);
+  });
 }
+
 function restoreBattleGameArea(){
-  const origArea=document.getElementById('gameArea');
-  if(origArea&&origArea._origParent){
-    if(origArea._origSibling)origArea._origParent.insertBefore(origArea,origArea._origSibling);
-    else origArea._origParent.appendChild(origArea);
-    origArea._origParent=null;origArea._origSibling=null;
+  const gcEl=document.getElementById('gameCanvas');
+  if(gcEl&&gcEl._origParent){
+    gcEl.style.cssText=''; // 인라인 스타일 초기화
+    if(gcEl._origSibling)gcEl._origParent.insertBefore(gcEl,gcEl._origSibling);
+    else gcEl._origParent.appendChild(gcEl);
+    gcEl._origParent=null;gcEl._origSibling=null;
   }
 }
 function createFixedBlock(data,level){
@@ -2060,21 +2098,39 @@ function syncMyFloor(floor){
   if(!BATTLE.battleId)return;
   db.collection(COL_BATTLES).doc(BATTLE.battleId).update({[`${BATTLE.myKey}Floor`]:floor}).catch(()=>{});
 }
-function updateOpponentViz(floor){
-  const viz=document.getElementById('opponentStackViz');if(!viz)return;
-  viz.innerHTML='';
-  const show=Math.min(floor,14);
-  for(let i=0;i<show;i++){
-    const blk=document.createElement('div');blk.className='opp-block';
-    blk.style.width=Math.max(20,100-i*5)+'%';viz.appendChild(blk);
+function updateOpponentViz(floor) {
+  const fEl = document.getElementById('oppFloorBig');
+  const st = document.getElementById('opponentStatus');
+  const canvas = document.getElementById('oppStackCanvas');
+
+  if (fEl) fEl.textContent = floor + 'F';
+  if (st) st.textContent = floor > 0 ? `현재 ${floor}층 진행 중` : '게임 중...';
+  if (!canvas) return;
+
+  const ctx = canvas.getContext('2d');
+  const W = canvas.width, H = canvas.height;
+  const show = Math.min(floor, 14);
+  const rowH = H / 14;
+
+  ctx.clearRect(0, 0, W, H);
+
+  for (let i = 0; i < show; i++) {
+    const y = H - (i + 1) * rowH;
+    const pct = Math.max(15, 100 - i * 5) / 100;
+    const hue = (i * 25) % 360;
+    const hue2 = (hue + 60) % 360;
+
+    // 기존 width 퍼센트 그대로 반영
+    const blockW = W * pct;
+    const offsetX = (W - blockW) / 2;
+
+    const grad = ctx.createLinearGradient(offsetX, 0, offsetX + blockW, 0);
+    grad.addColorStop(0, `hsl(${hue}, 100%, 55%)`);
+    grad.addColorStop(1, `hsl(${hue2}, 100%, 60%)`);
+
+    ctx.fillStyle = grad;
+    ctx.fillRect(offsetX, y + 1, blockW, rowH - 2);
   }
-  let fEl=document.getElementById('oppFloorBig');
-  if(!fEl){
-    fEl=document.createElement('div');fEl.id='oppFloorBig';fEl.className='opp-floor-num';
-    const area=document.getElementById('opponentBattleArea');if(area)area.appendChild(fEl);
-  }
-  fEl.textContent=floor+'F';
-  const st=document.getElementById('opponentStatus');if(st)st.textContent=`현재 ${floor}층`;
 }
 function listenBattleRoom(){
   if(BATTLE.battleListener){BATTLE.battleListener();BATTLE.battleListener=null;}
