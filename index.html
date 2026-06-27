@@ -877,15 +877,37 @@ function judge(){
   const cur={left:G.movLeft,width:G.movWidth};
   const prev=G.stack[G.stack.length-1];
   const ol=Math.max(cur.left,prev.left),or=Math.min(cur.left+cur.width,prev.left+prev.width),ow=or-ol;
-  if(ow<=0){showJudgment('✖ MISS!','miss');flashScreen('rgba(255,0,80,0.45)');triggerGameOver();return;}
+
+  // ✅ 겹치는 부분이 0 이하일 때만 MISS (아무리 얇아도 계속 진행)
+  if(ow<=0){
+    showJudgment('✖ MISS!','miss');
+    flashScreen('rgba(255,0,80,0.45)');
+    triggerGameOver();
+    return;
+  }
+
   const cutted={left:ol,width:ow};
   const isPerfect=Math.abs(ol-prev.left)<=2&&Math.abs(or-(prev.left+prev.width))<=2;
-  if(isPerfect){cutted.left=prev.left;cutted.width=prev.width;showJudgment('⚡ PERFECT!','perfect');flashScreen('rgba(0,255,255,0.3)');}
-  else{showJudgment('✂ CUT!','cut');flashScreen('rgba(255,170,0,0.2)');spawnDebris(cur,cutted);}
-  G.movEl.id='';G.movEl.dataset.level=G.level;G.movEl.style.left=cutted.left+'px';G.movEl.style.width=cutted.width+'px';G.movEl=null;
-  G.stack.push(cutted);G.level++;document.getElementById('levelDisplay').textContent=G.level+'F';
+  if(isPerfect){
+    cutted.left=prev.left;cutted.width=prev.width;
+    showJudgment('⚡ PERFECT!','perfect');
+    flashScreen('rgba(0,255,255,0.3)');
+  } else {
+    showJudgment('✂ CUT!','cut');
+    flashScreen('rgba(255,170,0,0.2)');
+    spawnDebris(cur,cutted);
+  }
+
+  G.movEl.id='';G.movEl.dataset.level=G.level;
+  G.movEl.style.left=cutted.left+'px';
+  G.movEl.style.width=cutted.width+'px';
+  G.movEl=null;
+  G.stack.push(cutted);
+  G.level++;
+  document.getElementById('levelDisplay').textContent=G.level+'F';
   G.movSpeed=Math.min(SPD_MAX,G.movSpeed*SPD_MULT);
-  if(cutted.width<=MIN_W){triggerGameOver();return;}
+
+  // ❌ MIN_W 체크 완전 제거 → 끝나는 조건은 MISS 뿐
   setTimeout(()=>spawnMoving(),300);
 }
 
