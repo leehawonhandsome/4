@@ -1,276 +1,429 @@
-<!DOCTYPE html>
+\<!DOCTYPE html>
 <html lang="ko">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-    <title>Stack Rush</title>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>Stack Rush</title>
 
-    <script src="https://www.gstatic.com/firebasejs/10.7.0/firebase-app-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/10.7.0/firebase-firestore-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.7.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.7.0/firebase-firestore-compat.js"></script>
 
-    <style>
-        * { margin:0; padding:0; box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
-        html, body {
-            width:100%; height:100%;
-            font-family:'Segoe UI',sans-serif;
-            background:linear-gradient(135deg,#0a0e27,#1a1f3a);
-            color:#fff; overflow:hidden; touch-action:manipulation;
-            position:fixed;
-        }
-        body { display:flex; justify-content:center; align-items:center; }
+<style>
+* { margin:0; padding:0; box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
+html, body {
+  width:100%; height:100%;
+  font-family:'Segoe UI',sans-serif;
+  background:linear-gradient(135deg,#0a0e27,#1a1f3a);
+  color:#fff; overflow:hidden; touch-action:manipulation;
+  position:fixed;
+}
+body { display:flex; justify-content:center; align-items:center; }
 
-        .screen {
-            position:fixed; inset:0;
-            background:rgba(10,14,39,0.98);
-            display:flex; flex-direction:column;
-            justify-content:center; align-items:center;
-            z-index:2000; backdrop-filter:blur(10px);
-            padding:20px; overflow-y:auto;
-        }
-        .screen.hidden { display:none; }
+.screen {
+  position:fixed; inset:0;
+  background:rgba(10,14,39,0.98);
+  display:flex; flex-direction:column;
+  justify-content:center; align-items:center;
+  z-index:2000; backdrop-filter:blur(10px);
+  padding:20px; overflow-y:auto;
+}
+.screen.hidden { display:none; }
 
-        .modal-content { text-align:center; width:100%; max-width:400px; }
-        .modal-content h1 {
-            font-size:clamp(2rem,9vw,3.2rem); font-weight:900; letter-spacing:2px;
-            background:linear-gradient(90deg,#00ffff,#ff00ff,#00ffff);
-            background-size:200%; -webkit-background-clip:text;
-            -webkit-text-fill-color:transparent; background-clip:text;
-            animation:gFlow 3s ease infinite; margin-bottom:10px;
-        }
-        @keyframes gFlow { 0%,100%{background-position:0%} 50%{background-position:100%} }
-        .modal-content p { color:#aaa; margin-bottom:22px; }
+.modal-content { text-align:center; width:100%; max-width:400px; }
+.modal-content h1 {
+  font-size:clamp(2rem,9vw,3.2rem); font-weight:900; letter-spacing:2px;
+  background:linear-gradient(90deg,#00ffff,#ff00ff,#00ffff);
+  background-size:200%; -webkit-background-clip:text;
+  -webkit-text-fill-color:transparent; background-clip:text;
+  animation:gFlow 3s ease infinite; margin-bottom:10px;
+}
+@keyframes gFlow { 0%,100%{background-position:0%} 50%{background-position:100%} }
+.modal-content p { color:#aaa; margin-bottom:22px; }
 
-        #playerNameInput {
-            width:80%; max-width:280px; padding:13px 16px; font-size:1rem;
-            border:2px solid #00ffff; border-radius:10px;
-            background:rgba(0,255,255,0.08); color:#fff; text-align:center;
-            margin:0 auto 22px; display:block;
-        }
-        #playerNameInput:focus { outline:none; border-color:#ff00ff; }
+#playerNameInput {
+  width:80%; max-width:280px; padding:13px 16px; font-size:1rem;
+  border:2px solid #00ffff; border-radius:10px;
+  background:rgba(0,255,255,0.08); color:#fff; text-align:center;
+  margin:0 auto 22px; display:block;
+}
+#playerNameInput:focus { outline:none; border-color:#ff00ff; }
 
-        .modal-buttons { display:flex; gap:10px; justify-content:center; margin-bottom:22px; flex-wrap:wrap; }
+.modal-buttons { display:flex; gap:10px; justify-content:center; margin-bottom:22px; flex-wrap:wrap; }
 
-        .btn {
-            padding:12px 28px; font-size:0.93rem; font-weight:bold;
-            background:linear-gradient(90deg,#00ffff,#ff00ff);
-            color:#000; border:none; border-radius:10px; cursor:pointer;
-            transition:transform 0.15s; text-transform:uppercase; letter-spacing:1px;
-            user-select:none; -webkit-user-select:none;
-        }
-        .btn:active { transform:scale(0.92); }
-        .btn.red { background:linear-gradient(90deg,#ff0066,#ff6600); color:#fff; }
+.btn {
+  padding:12px 28px; font-size:0.93rem; font-weight:bold;
+  background:linear-gradient(90deg,#00ffff,#ff00ff);
+  color:#000; border:none; border-radius:10px; cursor:pointer;
+  transition:transform 0.15s; text-transform:uppercase; letter-spacing:1px;
+  user-select:none; -webkit-user-select:none;
+}
+.btn:active { transform:scale(0.92); }
+.btn.red { background:linear-gradient(90deg,#ff0066,#ff6600); color:#fff; }
+.btn.cyan { background:linear-gradient(90deg,#00ffff,#0088ff); color:#000; }
 
-        .mini-ranking {
-            width:100%; max-width:300px; padding:16px;
-            background:rgba(0,255,255,0.05); border:2px solid rgba(0,255,255,0.2);
-            border-radius:12px; max-height:250px; overflow-y:auto;
-            margin:0 auto;
-        }
-        .mini-ranking h3 { color:#00ffff; margin-bottom:10px; font-size:0.82rem; text-transform:uppercase; letter-spacing:1px; }
+.mini-ranking {
+  width:100%; max-width:300px; padding:16px;
+  background:rgba(0,255,255,0.05); border:2px solid rgba(0,255,255,0.2);
+  border-radius:12px; max-height:220px; overflow-y:auto;
+  margin:0 auto;
+}
+.mini-ranking h3 { color:#00ffff; margin-bottom:10px; font-size:0.82rem; text-transform:uppercase; letter-spacing:1px; }
 
-        .rank-loading {
-            color:#aaa; text-align:center; padding:16px; font-size:0.85rem;
-            animation: pulse 1.2s ease infinite;
-        }
-        @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.3} }
+.rank-loading {
+  color:#aaa; text-align:center; padding:16px; font-size:0.85rem;
+  animation: pulse 1.2s ease infinite;
+}
+@keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.3} }
 
-        .conn-status {
-            display:inline-flex; align-items:center; gap:6px;
-            font-size:0.78rem; margin-bottom:14px;
-            padding:5px 12px; border-radius:20px; border:1px solid;
-        }
-        .conn-status.online  { color:#00ff88; border-color:#00ff88; background:rgba(0,255,136,0.08); }
-        .conn-status.offline { color:#ff4466; border-color:#ff4466; background:rgba(255,68,102,0.08); }
-        .conn-dot { width:7px; height:7px; border-radius:50%; background:currentColor; }
-        .conn-status.online .conn-dot { animation: blink 1.2s ease infinite; }
-        @keyframes blink { 0%,100%{opacity:1} 50%{opacity:0.2} }
+.conn-status {
+  display:inline-flex; align-items:center; gap:6px;
+  font-size:0.78rem; margin-bottom:14px;
+  padding:5px 12px; border-radius:20px; border:1px solid;
+}
+.conn-status.online  { color:#00ff88; border-color:#00ff88; background:rgba(0,255,136,0.08); }
+.conn-status.offline { color:#ff4466; border-color:#ff4466; background:rgba(255,68,102,0.08); }
+.conn-dot { width:7px; height:7px; border-radius:50%; background:currentColor; }
+.conn-status.online .conn-dot { animation: blink 1.2s ease infinite; }
+@keyframes blink { 0%,100%{opacity:1} 50%{opacity:0.2} }
 
-        .rank-item {
-            display:flex; justify-content:space-between; align-items:center;
-            padding:8px 0; border-bottom:1px solid rgba(0,255,255,0.1); font-size:0.86rem;
-        }
-        .rank-item:last-child { border-bottom:none; }
-        .rank-num  { color:#ff00ff; font-weight:bold; width:28px; font-size:0.8rem; }
-        .rank-name { flex:1; margin:0 8px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
-        .rank-score{ color:#00ffff; font-weight:bold; }
-        .rank-item.me {
-            background:rgba(0,255,255,0.12); padding:8px 6px; border-radius:6px;
-            border-bottom:2px solid #00ffff !important;
-        }
-        .rank-num.top1 { color:#FFD700; font-size:1rem; }
-        .rank-num.top2 { color:#C0C0C0; font-size:0.95rem; }
-        .rank-num.top3 { color:#CD7F32; font-size:0.9rem; }
+.rank-item {
+  display:flex; justify-content:space-between; align-items:center;
+  padding:8px 0; border-bottom:1px solid rgba(0,255,255,0.1); font-size:0.86rem;
+}
+.rank-item:last-child { border-bottom:none; }
+.rank-num  { color:#ff00ff; font-weight:bold; width:28px; font-size:0.8rem; }
+.rank-name { flex:1; margin:0 8px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.rank-score{ color:#00ffff; font-weight:bold; }
+.rank-item.me {
+  background:rgba(0,255,255,0.12); padding:8px 6px; border-radius:6px;
+  border-bottom:2px solid #00ffff !important;
+}
+.rank-num.top1 { color:#FFD700; font-size:1rem; }
+.rank-num.top2 { color:#C0C0C0; font-size:0.95rem; }
+.rank-num.top3 { color:#CD7F32; font-size:0.9rem; }
 
-        #gameScreen {
-            position:fixed; inset:0; z-index:10;
-            display:flex; flex-direction:column;
-        }
-        #gameScreen.hidden { display:none; }
+/* ── 게임 화면 ── */
+#gameScreen {
+  position:fixed; inset:0; z-index:10;
+  display:flex; flex-direction:column;
+}
+#gameScreen.hidden { display:none; }
 
-        .game-header {
-            display:flex; justify-content:space-between; align-items:center;
-            padding:13px 16px; border-bottom:2px solid rgba(0,255,255,0.2);
-            background:rgba(0,0,0,0.5); flex-shrink:0; z-index:100;
-        }
-        .player-info { font-size:0.9rem; color:#00ffff; font-weight:bold; }
-        .level-display {
-            font-size:1.7rem; font-weight:900; color:#ff00ff;
-            text-shadow:0 0 15px rgba(255,0,255,0.7);
-        }
+.game-header {
+  display:flex; justify-content:space-between; align-items:center;
+  padding:13px 16px; border-bottom:2px solid rgba(0,255,255,0.2);
+  background:rgba(0,0,0,0.5); flex-shrink:0; z-index:100;
+}
+.player-info { font-size:0.9rem; color:#00ffff; font-weight:bold; }
+.level-display {
+  font-size:1.7rem; font-weight:900; color:#ff00ff;
+  text-shadow:0 0 15px rgba(255,0,255,0.7);
+}
 
-        #gameCanvas {
-            flex:1; position:relative; overflow:hidden;
-            background:linear-gradient(180deg, #0a0e27 0%, #111830 100%);
-        }
-        #viewport {
-            position:absolute; top:0; left:0; width:100%;
-            will-change:transform;
-        }
+#gameCanvas {
+  flex:1; position:relative; overflow:hidden;
+  background:linear-gradient(180deg, #0a0e27 0%, #111830 100%);
+}
+#viewport {
+  position:absolute; top:0; left:0; width:100%;
+  will-change:transform;
+}
 
-        .block {
-            position:absolute; border-radius:8px;
-            display:flex; justify-content:center; align-items:center;
-            font-weight:900; font-size:0.78rem; color:#000;
-            box-shadow:0 0 14px rgba(0,255,255,0.4);
-            letter-spacing:1px; will-change:left;
-        }
+.block {
+  position:absolute; border-radius:8px;
+  display:flex; justify-content:center; align-items:center;
+  font-weight:900; font-size:0.78rem; color:#000;
+  box-shadow:0 0 14px rgba(0,255,255,0.4);
+  letter-spacing:1px; will-change:left;
+}
 
-        .judgment {
-            position:fixed; top:38%; left:50%;
-            transform:translate(-50%,-50%);
-            font-size:2.8rem; font-weight:900;
-            pointer-events:none; z-index:800; letter-spacing:2px;
-        }
-        .judgment.perfect { color:#00ffff; text-shadow:0 0 25px #00ffff; animation:jPop .75s ease forwards; }
-        .judgment.cut     { color:#ffaa00; text-shadow:0 0 25px #ffaa00; animation:jPop .75s ease forwards; }
-        .judgment.miss    { color:#ff0055; text-shadow:0 0 25px #ff0055; animation:jPop .75s ease forwards; }
-        @keyframes jPop {
-            0%  { opacity:1; transform:translate(-50%,-50%) scale(0.3); }
-            40% { opacity:1; transform:translate(-50%,-50%) scale(1.2); }
-            100%{ opacity:0; transform:translate(-50%,-170%) scale(0.9); }
-        }
+.judgment {
+  position:fixed; top:38%; left:50%;
+  transform:translate(-50%,-50%);
+  font-size:2.8rem; font-weight:900;
+  pointer-events:none; z-index:800; letter-spacing:2px;
+}
+.judgment.perfect { color:#00ffff; text-shadow:0 0 25px #00ffff; animation:jPop .75s ease forwards; }
+.judgment.cut     { color:#ffaa00; text-shadow:0 0 25px #ffaa00; animation:jPop .75s ease forwards; }
+.judgment.miss    { color:#ff0055; text-shadow:0 0 25px #ff0055; animation:jPop .75s ease forwards; }
+@keyframes jPop {
+  0%  { opacity:1; transform:translate(-50%,-50%) scale(0.3); }
+  40% { opacity:1; transform:translate(-50%,-50%) scale(1.2); }
+  100%{ opacity:0; transform:translate(-50%,-170%) scale(0.9); }
+}
 
-        .flash { position:fixed; inset:0; pointer-events:none; z-index:700; animation:fOut .25s ease-out forwards; }
-        @keyframes fOut { from{opacity:1} to{opacity:0} }
+.flash { position:fixed; inset:0; pointer-events:none; z-index:700; animation:fOut .25s ease-out forwards; }
+@keyframes fOut { from{opacity:1} to{opacity:0} }
 
-        .debris {
-            position:fixed; border-radius:3px; pointer-events:none; z-index:300;
-            animation:debFly var(--t,.7s) cubic-bezier(.2,.8,.4,1) forwards;
-        }
-        @keyframes debFly { to { opacity:0; transform:translate(var(--dx),var(--dy)) rotate(var(--r)); } }
+.debris {
+  position:fixed; border-radius:3px; pointer-events:none; z-index:300;
+  animation:debFly var(--t,.7s) cubic-bezier(.2,.8,.4,1) forwards;
+}
+@keyframes debFly { to { opacity:0; transform:translate(var(--dx),var(--dy)) rotate(var(--r)); } }
 
-        .result-box { text-align:center; width:100%; max-width:420px; }
-        .go-title    { font-size:3rem; color:#ff0066; margin-bottom:8px; letter-spacing:2px; }
-        .final-score { font-size:clamp(3rem,12vw,4.5rem); font-weight:900; color:#00ffff; text-shadow:0 0 35px #00ffff; margin:6px 0; }
-        .score-sub   { color:#aaa; margin-bottom:18px; font-size:1rem; }
-        .badge { padding:14px; margin-bottom:18px; border-radius:10px; font-weight:bold; font-size:0.97rem; border:2px solid; }
-        .badge.new { border-color:#00ffff; color:#00ffff; background:rgba(0,255,255,0.08); }
-        .badge.old { border-color:#ff0066; color:#ff6699; background:rgba(255,0,102,0.08); }
+/* ── 결과 화면 ── */
+.result-box { text-align:center; width:100%; max-width:420px; }
+.go-title    { font-size:3rem; color:#ff0066; margin-bottom:8px; letter-spacing:2px; }
+.final-score { font-size:clamp(3rem,12vw,4.5rem); font-weight:900; color:#00ffff; text-shadow:0 0 35px #00ffff; margin:6px 0; }
+.score-sub   { color:#aaa; margin-bottom:18px; font-size:1rem; }
+.badge { padding:14px; margin-bottom:18px; border-radius:10px; font-weight:bold; font-size:0.97rem; border:2px solid; }
+.badge.new { border-color:#00ffff; color:#00ffff; background:rgba(0,255,255,0.08); }
+.badge.old { border-color:#ff0066; color:#ff6699; background:rgba(255,0,102,0.08); }
 
-        .rank-box {
-            background:rgba(0,255,255,0.04); border:2px solid rgba(0,255,255,0.2);
-            border-radius:12px; padding:16px; margin-bottom:20px;
-            max-height:32vh; overflow-y:auto;
-        }
-        .rank-box h3 { color:#00ffff; margin-bottom:10px; font-size:0.82rem; text-transform:uppercase; letter-spacing:1px; }
-        .action-btns { display:flex; gap:10px; justify-content:center; flex-wrap:wrap; }
+.rank-box {
+  background:rgba(0,255,255,0.04); border:2px solid rgba(0,255,255,0.2);
+  border-radius:12px; padding:16px; margin-bottom:20px;
+  max-height:32vh; overflow-y:auto;
+}
+.rank-box h3 { color:#00ffff; margin-bottom:10px; font-size:0.82rem; text-transform:uppercase; letter-spacing:1px; }
+.action-btns { display:flex; gap:10px; justify-content:center; flex-wrap:wrap; }
 
-        .my-rank-badge {
-            margin-bottom:14px; padding:10px 16px; border-radius:8px;
-            background:rgba(255,0,255,0.1); border:1px solid #ff00ff;
-            color:#ff00ff; font-size:0.88rem; font-weight:bold;
-        }
+.my-rank-badge {
+  margin-bottom:14px; padding:10px 16px; border-radius:8px;
+  background:rgba(255,0,255,0.1); border:1px solid #ff00ff;
+  color:#ff00ff; font-size:0.88rem; font-weight:bold;
+}
 
-        @media(max-width:480px){
-            .judgment { font-size:2rem; }
-            .go-title  { font-size:2.2rem; }
-        }
-    </style>
+/* ════════════════════════════════════
+   💬 채팅 UI
+════════════════════════════════════ */
+#chatBtn {
+  position:fixed; bottom:20px; right:20px;
+  width:52px; height:52px; border-radius:50%;
+  background:linear-gradient(135deg,#00ffff,#ff00ff);
+  border:none; cursor:pointer; z-index:3000;
+  display:flex; align-items:center; justify-content:center;
+  font-size:1.4rem; box-shadow:0 4px 20px rgba(0,255,255,0.4);
+  transition:transform 0.2s;
+}
+#chatBtn:active { transform:scale(0.9); }
+#chatBadge {
+  position:absolute; top:-4px; right:-4px;
+  background:#ff0066; color:#fff; font-size:0.65rem;
+  font-weight:bold; border-radius:50%;
+  width:18px; height:18px; display:none;
+  align-items:center; justify-content:center;
+}
+
+#chatPanel {
+  position:fixed; bottom:82px; right:20px;
+  width:min(340px, calc(100vw - 32px));
+  height:min(420px, calc(100vh - 120px));
+  background:rgba(10,14,39,0.97);
+  border:2px solid rgba(0,255,255,0.3);
+  border-radius:16px; z-index:3000;
+  display:flex; flex-direction:column;
+  backdrop-filter:blur(12px);
+  box-shadow:0 8px 40px rgba(0,0,0,0.6);
+  transform:translateY(20px) scale(0.95);
+  opacity:0; pointer-events:none;
+  transition:all 0.25s cubic-bezier(0.34,1.56,0.64,1);
+}
+#chatPanel.open {
+  transform:translateY(0) scale(1);
+  opacity:1; pointer-events:all;
+}
+
+.chat-header {
+  padding:12px 16px;
+  border-bottom:1px solid rgba(0,255,255,0.2);
+  display:flex; align-items:center; justify-content:space-between;
+  flex-shrink:0;
+}
+.chat-header h3 {
+  font-size:0.9rem; color:#00ffff; font-weight:bold;
+}
+.chat-online-count {
+  font-size:0.75rem; color:#00ff88;
+}
+#chatClose {
+  background:none; border:none; color:#aaa;
+  font-size:1.2rem; cursor:pointer; padding:0 4px;
+}
+#chatClose:hover { color:#fff; }
+
+#chatMessages {
+  flex:1; overflow-y:auto; padding:12px;
+  display:flex; flex-direction:column; gap:8px;
+  scroll-behavior:smooth;
+}
+#chatMessages::-webkit-scrollbar { width:4px; }
+#chatMessages::-webkit-scrollbar-track { background:transparent; }
+#chatMessages::-webkit-scrollbar-thumb { background:rgba(0,255,255,0.3); border-radius:2px; }
+
+.chat-msg {
+  display:flex; flex-direction:column; gap:2px;
+  animation: msgIn 0.2s ease;
+}
+@keyframes msgIn {
+  from { opacity:0; transform:translateY(6px); }
+  to   { opacity:1; transform:translateY(0); }
+}
+.chat-msg .msg-name {
+  font-size:0.72rem; color:#ff00ff; font-weight:bold;
+}
+.chat-msg .msg-name.me-name { color:#00ffff; }
+.chat-msg .msg-name .msg-score-badge {
+  font-size:0.65rem; color:#ffaa00;
+  background:rgba(255,170,0,0.15);
+  padding:1px 5px; border-radius:4px; margin-left:4px;
+}
+.chat-msg .msg-bubble {
+  background:rgba(255,255,255,0.07);
+  padding:7px 11px; border-radius:0 10px 10px 10px;
+  font-size:0.85rem; line-height:1.4; word-break:break-word;
+  max-width:90%;
+}
+.chat-msg.me .msg-bubble {
+  background:rgba(0,255,255,0.12);
+  border-radius:10px 0 10px 10px;
+  align-self:flex-end;
+}
+.chat-msg.me { align-items:flex-end; }
+.chat-msg.system .msg-bubble {
+  background:transparent; color:#666;
+  font-size:0.75rem; font-style:italic;
+  text-align:center; align-self:center;
+}
+.msg-time {
+  font-size:0.65rem; color:#555; margin-top:1px;
+}
+
+.chat-input-row {
+  padding:10px 12px;
+  border-top:1px solid rgba(0,255,255,0.15);
+  display:flex; gap:8px; flex-shrink:0;
+}
+#chatInput {
+  flex:1; padding:9px 12px; font-size:0.85rem;
+  background:rgba(255,255,255,0.07);
+  border:1px solid rgba(0,255,255,0.25);
+  border-radius:8px; color:#fff; outline:none;
+}
+#chatInput:focus { border-color:#00ffff; }
+#chatSend {
+  padding:9px 14px; font-size:0.85rem; font-weight:bold;
+  background:linear-gradient(90deg,#00ffff,#ff00ff);
+  color:#000; border:none; border-radius:8px; cursor:pointer;
+}
+#chatSend:active { transform:scale(0.93); }
+
+.chat-no-name {
+  padding:16px; text-align:center; color:#aaa; font-size:0.82rem;
+}
+
+@media(max-width:480px){
+  .judgment { font-size:2rem; }
+  .go-title  { font-size:2.2rem; }
+  #chatPanel { bottom:78px; right:12px; width:calc(100vw - 24px); }
+  #chatBtn   { right:14px; bottom:16px; }
+}
+</style>
 </head>
 <body>
 
-    <!-- 이름 입력 화면 -->
-    <div class="screen" id="nameModal">
-        <div class="modal-content">
-            <h1>STACK RUSH</h1>
-            <div class="conn-status offline" id="connStatus">
-                <span class="conn-dot"></span>
-                <span id="connText">연결 중...</span>
-            </div>
-            <p>🌍 전 세계 사람들과 경쟁하세요!</p>
-            <input type="text" id="playerNameInput" placeholder="닉네임 입력" maxlength="12" autocomplete="off">
-            <div class="modal-buttons">
-                <button class="btn" id="btnStart">▶ 시작</button>
-                <button class="btn" id="btnShowRanking">🏆 전체 랭킹</button>
-            </div>
-            <div class="mini-ranking">
-                <h3>⚡ 실시간 글로벌 TOP 10</h3>
-                <div id="miniRankingList">
-                    <div class="rank-loading">🔄 랭킹 불러오는 중...</div>
-                </div>
-            </div>
-        </div>
+<!-- 이름 입력 화면 -->
+<div class="screen" id="nameModal">
+  <div class="modal-content">
+    <h1>STACK RUSH</h1>
+    <div class="conn-status offline" id="connStatus">
+      <span class="conn-dot"></span>
+      <span id="connText">연결 중...</span>
     </div>
+    <p>🌍 전 세계 사람들과 경쟁하세요!</p>
+    <input type="text" id="playerNameInput" placeholder="닉네임 입력" maxlength="12" autocomplete="off">
+    <div class="modal-buttons">
+      <button class="btn" id="btnStart">▶ 시작</button>
+      <button class="btn cyan" id="btnShowRanking">🏆 전체 랭킹</button>
+    </div>
+    <div class="mini-ranking">
+      <h3>⚡ 실시간 글로벌 TOP 10</h3>
+      <div id="miniRankingList">
+        <div class="rank-loading">🔄 랭킹 불러오는 중...</div>
+      </div>
+    </div>
+  </div>
+</div>
 
-    <!-- 전체 랭킹 화면 -->
-    <div class="screen hidden" id="rankingScreen">
-        <div class="result-box">
-            <h1 style="color:#00ffff;margin-bottom:6px;font-size:2rem;">🏆 글로벌 랭킹</h1>
-            <p style="color:#aaa;font-size:0.82rem;margin-bottom:16px;">실시간 업데이트</p>
-            <div class="rank-box" style="max-height:55vh;">
-                <div id="fullRankingList">
-                    <div class="rank-loading">🔄 불러오는 중...</div>
-                </div>
-            </div>
-            <button class="btn" id="btnBackRanking">← 돌아가기</button>
-        </div>
+<!-- 전체 랭킹 화면 -->
+<div class="screen hidden" id="rankingScreen">
+  <div class="result-box">
+    <h1 style="color:#00ffff;margin-bottom:6px;font-size:2rem;">🏆 글로벌 랭킹</h1>
+    <p style="color:#aaa;font-size:0.82rem;margin-bottom:16px;">실시간 업데이트</p>
+    <div class="rank-box" style="max-height:55vh;">
+      <div id="fullRankingList">
+        <div class="rank-loading">🔄 불러오는 중...</div>
+      </div>
     </div>
+    <button class="btn" id="btnBackRanking">← 돌아가기</button>
+  </div>
+</div>
 
-    <!-- 게임 화면 -->
-    <div id="gameScreen" class="hidden">
-        <div class="game-header">
-            <div class="player-info" id="playerInfo"></div>
-            <div class="level-display" id="levelDisplay">1F</div>
-            <button class="btn red" id="btnMenu" style="padding:8px 14px;font-size:0.82rem;">메뉴</button>
-        </div>
-        <div id="gameCanvas">
-            <div id="viewport"></div>
-        </div>
-    </div>
+<!-- 게임 화면 -->
+<div id="gameScreen" class="hidden">
+  <div class="game-header">
+    <div class="player-info" id="playerInfo"></div>
+    <div class="level-display" id="levelDisplay">1F</div>
+    <button class="btn red" id="btnMenu" style="padding:8px 14px;font-size:0.82rem;">메뉴</button>
+  </div>
+  <div id="gameCanvas">
+    <div id="viewport"></div>
+  </div>
+</div>
 
-    <!-- 게임 오버 화면 -->
-    <div class="screen hidden" id="gameOverScreen">
-        <div class="result-box">
-            <div class="go-title">🎮 GAME OVER</div>
-            <div class="final-score" id="finalScore">0</div>
-            <div class="score-sub">층에 도달했습니다!</div>
-            <div class="badge" id="recordBadge"></div>
-            <div id="myRankBadge" class="my-rank-badge" style="display:none"></div>
-            <div class="rank-box">
-                <h3>🏆 글로벌 랭킹</h3>
-                <div id="gameoverRankingList">
-                    <div class="rank-loading">🔄 저장 중...</div>
-                </div>
-            </div>
-            <div class="action-btns">
-                <button class="btn" id="btnRestart">🔄 다시 시작</button>
-                <button class="btn red" id="btnHome">🏠 메뉴로</button>
-            </div>
-        </div>
+<!-- 게임 오버 화면 -->
+<div class="screen hidden" id="gameOverScreen">
+  <div class="result-box">
+    <div class="go-title">🎮 GAME OVER</div>
+    <div class="final-score" id="finalScore">0</div>
+    <div class="score-sub">층에 도달했습니다!</div>
+    <div class="badge" id="recordBadge"></div>
+    <div id="myRankBadge" class="my-rank-badge" style="display:none"></div>
+    <div class="rank-box">
+      <h3>🏆 글로벌 랭킹</h3>
+      <div id="gameoverRankingList">
+        <div class="rank-loading">🔄 저장 중...</div>
+      </div>
     </div>
+    <div class="action-btns">
+      <button class="btn" id="btnRestart">🔄 다시 시작</button>
+      <button class="btn red" id="btnHome">🏠 메뉴로</button>
+    </div>
+  </div>
+</div>
+
+<!-- 💬 채팅 버튼 -->
+<button id="chatBtn" title="전체 채팅">
+  💬
+  <span id="chatBadge"></span>
+</button>
+
+<!-- 💬 채팅 패널 -->
+<div id="chatPanel">
+  <div class="chat-header">
+    <h3>💬 전체 채팅</h3>
+    <span class="chat-online-count" id="chatOnlineCount"></span>
+    <button id="chatClose">✕</button>
+  </div>
+  <div id="chatMessages"></div>
+  <div class="chat-input-row">
+    <input type="text" id="chatInput" placeholder="메시지 입력..." maxlength="80" autocomplete="off">
+    <button id="chatSend">전송</button>
+  </div>
+</div>
 
 <script>
 /* ════════════════════════════════════
    🔥 Firebase 설정
 ════════════════════════════════════ */
 const FIREBASE_CONFIG = {
-    apiKey: "AIzaSyAztxhe1Y01ZgLoEkn8UUDVybW9cabSjiI",
-    authDomain: "hawonhandsome.firebaseapp.com",
-    projectId: "hawonhandsome",
-    storageBucket: "hawonhandsome.firebasestorage.app",
-    messagingSenderId: "645822007153",
-    appId: "1:645822007153:web:33f180b5d45685be9e18d0",
-    measurementId: "G-C3NVP21G20"
+  apiKey: "AIzaSyAztxhe1Y01ZgLoEkn8UUDVybW9cabSjiI",
+  authDomain: "hawonhandsome.firebaseapp.com",
+  projectId: "hawonhandsome",
+  storageBucket: "hawonhandsome.firebasestorage.app",
+  messagingSenderId: "645822007153",
+  appId: "1:645822007153:web:33f180b5d45685be9e18d0",
+  measurementId: "G-C3NVP21G20"
 };
 
 /* ════════════════════════════════════
@@ -279,38 +432,40 @@ const FIREBASE_CONFIG = {
 let db        = null;
 let fbReady   = false;
 let rankUnsub = null;
+let chatUnsub = null;
 
 function initFirebase() {
-    try {
-        firebase.initializeApp(FIREBASE_CONFIG);
-        db = firebase.firestore();
-        fbReady = true;
-        setConnStatus(true);
-        console.log('✅ Firebase 연결 성공');
-        startRankingListener();
-    } catch(e) {
-        setConnStatus(false);
-        console.warn('❌ Firebase 연결 실패:', e.message);
-        showNoData('miniRankingList');
-        showNoData('fullRankingList');
-    }
+  try {
+    firebase.initializeApp(FIREBASE_CONFIG);
+    db = firebase.firestore();
+    fbReady = true;
+    setConnStatus(true);
+    console.log('✅ Firebase 연결 성공');
+    startRankingListener();
+    startChatListener();
+  } catch(e) {
+    setConnStatus(false);
+    console.warn('❌ Firebase 연결 실패:', e.message);
+    showNoData('miniRankingList');
+    showNoData('fullRankingList');
+  }
 }
 
 function setConnStatus(online) {
-    const el   = document.getElementById('connStatus');
-    const text = document.getElementById('connText');
-    if (online) {
-        el.className     = 'conn-status online';
-        text.textContent = '🌐 글로벌 서버 연결됨';
-    } else {
-        el.className     = 'conn-status offline';
-        text.textContent = '⚠️ 서버 미연결';
-    }
+  const el   = document.getElementById('connStatus');
+  const text = document.getElementById('connText');
+  if (online) {
+    el.className     = 'conn-status online';
+    text.textContent = '🌐 글로벌 서버 연결됨';
+  } else {
+    el.className     = 'conn-status offline';
+    text.textContent = '⚠️ 서버 미연결';
+  }
 }
 
 function showNoData(cid) {
-    const el = document.getElementById(cid);
-    if (el) el.innerHTML = '<div style="color:#aaa;text-align:center;padding:16px;">📡 서버 연결 필요</div>';
+  const el = document.getElementById(cid);
+  if (el) el.innerHTML = '<div style="color:#aaa;text-align:center;padding:16px;">📡 서버 연결 필요</div>';
 }
 
 /* ════════════════════════════════════
@@ -319,102 +474,264 @@ function showNoData(cid) {
 let G_rankings = [];
 
 function startRankingListener() {
-    if (!fbReady) return;
-    if (rankUnsub) rankUnsub();
+  if (!fbReady) return;
+  if (rankUnsub) rankUnsub();
 
-    rankUnsub = db.collection('scores')
-        .orderBy('score', 'desc')
-        .limit(20)
-        .onSnapshot(
-            snap => {
-                G_rankings = [];
-                snap.forEach(doc => {
-                    const d = doc.data();
-                    G_rankings.push({ name: d.name, score: d.score });
-                });
-                renderRanking('miniRankingList', 10);
-                if (!document.getElementById('rankingScreen').classList.contains('hidden')) {
-                    renderRanking('fullRankingList', 20);
-                }
-            },
-            err => {
-                console.warn('랭킹 수신 오류:', err);
-                setConnStatus(false);
-            }
-        );
+  rankUnsub = db.collection('scores')
+    .orderBy('score', 'desc')
+    .limit(50)
+    .onSnapshot(
+      snap => {
+        G_rankings = [];
+        snap.forEach(doc => {
+          const d = doc.data();
+          G_rankings.push({ name: d.name, score: d.score });
+        });
+        renderRanking('miniRankingList', 10);
+        if (!document.getElementById('rankingScreen').classList.contains('hidden')) {
+          renderRanking('fullRankingList', 50);
+        }
+        if (!document.getElementById('gameOverScreen').classList.contains('hidden')) {
+          renderRanking('gameoverRankingList', 20);
+        }
+      },
+      err => {
+        console.warn('랭킹 수신 오류:', err);
+        setConnStatus(false);
+      }
+    );
 }
 
 /* 점수 저장 - 닉네임당 최고기록만 */
 async function saveScore(name, score) {
-    if (!fbReady) return null;
-    try {
-        const snap = await db.collection('scores')
-            .where('name', '==', name)
-            .limit(1)
-            .get();
+  if (!fbReady) return null;
+  try {
+    const snap = await db.collection('scores')
+      .where('name', '==', name)
+      .limit(1)
+      .get();
 
-        if (snap.empty) {
-            await db.collection('scores').add({
-                name,
-                score,
-                ts: firebase.firestore.FieldValue.serverTimestamp()
-            });
-        } else {
-            const doc = snap.docs[0];
-            if (score > doc.data().score) {
-                await doc.ref.update({
-                    score,
-                    ts: firebase.firestore.FieldValue.serverTimestamp()
-                });
-            }
-        }
-        return true;
-    } catch(e) {
-        console.warn('점수 저장 실패:', e);
-        return false;
+    if (snap.empty) {
+      await db.collection('scores').add({
+        name,
+        score,
+        ts: firebase.firestore.FieldValue.serverTimestamp()
+      });
+    } else {
+      const doc = snap.docs[0];
+      if (score > doc.data().score) {
+        await doc.ref.update({
+          score,
+          ts: firebase.firestore.FieldValue.serverTimestamp()
+        });
+      }
     }
+    return true;
+  } catch(e) {
+    console.warn('점수 저장 실패:', e);
+    return false;
+  }
 }
 
 /* 랭킹 렌더링 */
 function renderRanking(cid, limit) {
-    const el = document.getElementById(cid);
-    if (!el) return;
+  const el = document.getElementById(cid);
+  if (!el) return;
 
-    const list = G_rankings.slice(0, limit);
+  const list = G_rankings.slice(0, limit);
 
-    if (!list.length) {
-        el.innerHTML = `
-            <div style="color:#aaa;text-align:center;padding:20px;">
-                <div style="font-size:2rem;margin-bottom:8px;">🏆</div>
-                <div>아직 기록이 없습니다</div>
-                <div style="font-size:0.78rem;margin-top:6px;color:#666;">첫 번째 도전자가 되세요!</div>
-            </div>`;
-        return;
-    }
+  if (!list.length) {
+    el.innerHTML = `
+      <div style="color:#aaa;text-align:center;padding:20px;">
+        <div style="font-size:2rem;margin-bottom:8px;">🏆</div>
+        <div>아직 기록이 없습니다</div>
+        <div style="font-size:0.78rem;margin-top:6px;color:#666;">첫 번째 도전자가 되세요!</div>
+      </div>`;
+    return;
+  }
 
-    const medals   = ['🥇','🥈','🥉'];
-    const numClass = ['top1','top2','top3'];
+  const medals   = ['🥇','🥈','🥉'];
+  const numClass = ['top1','top2','top3'];
 
-    el.innerHTML = list.map((r, i) => {
-        const isMe  = r.name === G.name;
-        const medal = i < 3 ? medals[i] : `#${i+1}`;
-        const cls   = i < 3 ? numClass[i] : '';
-        return `
-            <div class="rank-item ${isMe ? 'me' : ''}">
-                <span class="rank-num ${cls}">${medal}</span>
-                <span class="rank-name">${escapeHtml(r.name)}${isMe ? ' 👤' : ''}</span>
-                <span class="rank-score">${r.score}F</span>
-            </div>`;
-    }).join('');
+  el.innerHTML = list.map((r, i) => {
+    const isMe  = r.name === G.name;
+    const medal = i < 3 ? medals[i] : `#${i+1}`;
+    const cls   = i < 3 ? numClass[i] : '';
+    return `
+      <div class="rank-item ${isMe ? 'me' : ''}">
+        <span class="rank-num ${cls}">${medal}</span>
+        <span class="rank-name">${escapeHtml(r.name)}${isMe ? ' 👤' : ''}</span>
+        <span class="rank-score">${r.score}F</span>
+      </div>`;
+  }).join('');
 }
 
 function getMyRank(name) {
-    const idx = G_rankings.findIndex(r => r.name === name);
-    return idx === -1 ? null : idx + 1;
+  const idx = G_rankings.findIndex(r => r.name === name);
+  return idx === -1 ? null : idx + 1;
 }
 
 function escapeHtml(str) {
-    return str.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+  return String(str)
+    .replace(/&/g,'&amp;')
+    .replace(/</g,'&lt;')
+    .replace(/>/g,'&gt;')
+    .replace(/"/g,'&quot;');
+}
+
+/* ════════════════════════════════════
+   💬 채팅 시스템
+════════════════════════════════════ */
+let chatOpen    = false;
+let unreadCount = 0;
+let lastMsgId   = null;
+
+const chatPanel    = document.getElementById('chatPanel');
+const chatMessages = document.getElementById('chatMessages');
+const chatInput    = document.getElementById('chatInput');
+const chatBadge    = document.getElementById('chatBadge');
+
+/* 채팅 패널 열기/닫기 */
+function toggleChat() {
+  chatOpen = !chatOpen;
+  chatPanel.classList.toggle('open', chatOpen);
+  if (chatOpen) {
+    unreadCount = 0;
+    chatBadge.style.display = 'none';
+    chatBadge.textContent   = '';
+    setTimeout(() => {
+      chatMessages.scrollTop = chatMessages.scrollHeight;
+      chatInput.focus();
+    }, 50);
+  }
+}
+
+document.getElementById('chatBtn').addEventListener('click', toggleChat);
+document.getElementById('chatClose').addEventListener('click', toggleChat);
+
+/* 메시지 전송 */
+async function sendChat() {
+  const text = chatInput.value.trim();
+  if (!text) return;
+
+  if (!G.name) {
+    alert('게임을 시작하려면 먼저 닉네임을 입력하세요!');
+    return;
+  }
+
+  if (!fbReady) {
+    alert('서버 연결이 필요합니다.');
+    return;
+  }
+
+  chatInput.value = '';
+  chatInput.disabled = true;
+
+  try {
+    // 내 최고점수 가져오기
+    const myScore = G_rankings.find(r => r.name === G.name);
+    await db.collection('chats').add({
+      name  : G.name,
+      text  : text,
+      score : myScore ? myScore.score : 0,
+      ts    : firebase.firestore.FieldValue.serverTimestamp()
+    });
+  } catch(e) {
+    console.warn('채팅 전송 실패:', e);
+  }
+
+  chatInput.disabled = false;
+  chatInput.focus();
+}
+
+document.getElementById('chatSend').addEventListener('click', sendChat);
+chatInput.addEventListener('keypress', e => {
+  if (e.key === 'Enter') sendChat();
+});
+
+/* 채팅 수신 리스너 */
+function startChatListener() {
+  if (!fbReady) return;
+  if (chatUnsub) chatUnsub();
+
+  // 오래된 메시지 자동 정리 (100개 초과 시 앞에서 제거)
+  chatUnsub = db.collection('chats')
+    .orderBy('ts', 'asc')
+    .limitToLast(80)
+    .onSnapshot(snap => {
+      snap.docChanges().forEach(change => {
+        if (change.type === 'added') {
+          const d    = change.doc.data();
+          const isMe = d.name === G.name;
+          const msgId = change.doc.id;
+
+          // 중복 방지
+          if (document.getElementById('msg-' + msgId)) return;
+
+          appendChatMsg({
+            id    : msgId,
+            name  : d.name,
+            text  : d.text,
+            score : d.score || 0,
+            ts    : d.ts,
+            isMe  : isMe
+          });
+
+          // 안 읽은 메시지 뱃지
+          if (!chatOpen && !isMe) {
+            unreadCount++;
+            chatBadge.style.display  = 'flex';
+            chatBadge.textContent    = unreadCount > 9 ? '9+' : unreadCount;
+          }
+        }
+      });
+    }, err => {
+      console.warn('채팅 수신 오류:', err);
+    });
+}
+
+/* 메시지 DOM 추가 */
+function appendChatMsg({ id, name, text, score, ts, isMe }) {
+  const div = document.createElement('div');
+  div.className = 'chat-msg' + (isMe ? ' me' : '');
+  div.id = 'msg-' + id;
+
+  const timeStr = ts
+    ? new Date(ts.toMillis()).toLocaleTimeString('ko-KR',{ hour:'2-digit', minute:'2-digit' })
+    : '';
+
+  const scoreStr = score > 0
+    ? `<span class="msg-score-badge">🏆${score}F</span>`
+    : '';
+
+  div.innerHTML = `
+    <span class="msg-name ${isMe ? 'me-name' : ''}">
+      ${escapeHtml(name)} ${scoreStr}
+    </span>
+    <span class="msg-bubble">${escapeHtml(text)}</span>
+    <span class="msg-time">${timeStr}</span>
+  `;
+
+  chatMessages.appendChild(div);
+
+  // 100개 넘으면 오래된 것 제거
+  while (chatMessages.children.length > 100) {
+    chatMessages.removeChild(chatMessages.firstChild);
+  }
+
+  // 스크롤 (패널 열려있을 때만)
+  if (chatOpen) {
+    chatMessages.scrollTop = chatMessages.scrollHeight;
+  }
+}
+
+/* 시스템 메시지 */
+function addSystemMsg(text) {
+  const div = document.createElement('div');
+  div.className = 'chat-msg system';
+  div.innerHTML = `<span class="msg-bubble">${text}</span>`;
+  chatMessages.appendChild(div);
+  if (chatOpen) chatMessages.scrollTop = chatMessages.scrollHeight;
 }
 
 /* ════════════════════════════════════
@@ -431,15 +748,15 @@ const SPD_INC  = 7;
    게임 상태
 ════════════════════════════════════ */
 const G = {
-    name:'', level:1,
-    playing:false, started:false,
-    stack:[],
-    movEl:null,
-    movLeft:0, movDir:-1,
-    movWidth:0, movSpeed:SPD_INIT,
-    movRAF:null, movPrevT:null,
-    camY:0, camTarget:0, camRAF:null,
-    cW:0, cH:0, vpH:0,
+  name:'', level:1,
+  playing:false, started:false,
+  stack:[],
+  movEl:null,
+  movLeft:0, movDir:-1,
+  movWidth:0, movSpeed:SPD_INIT,
+  movRAF:null, movPrevT:null,
+  camY:0, camTarget:0, camRAF:null,
+  cW:0, cH:0, vpH:0,
 };
 
 const vp = document.getElementById('viewport');
@@ -456,330 +773,357 @@ function calcVpH()       { return G.cH + (G.level + CAM_PAD + 2) * BLOCK_H; }
 ════════════════════════════════════ */
 const SCREENS = ['nameModal','rankingScreen','gameScreen','gameOverScreen'];
 function showOnly(id) {
-    SCREENS.forEach(s => document.getElementById(s).classList.add('hidden'));
-    document.getElementById(id).classList.remove('hidden');
+  SCREENS.forEach(s => document.getElementById(s).classList.add('hidden'));
+  document.getElementById(id).classList.remove('hidden');
 }
 function goHome() {
-    stopMov(); stopCam();
-    G.playing = false; G.started = false;
-    showOnly('nameModal');
+  stopMov(); stopCam();
+  G.playing = false; G.started = false;
+  showOnly('nameModal');
 }
 
 /* ════════════════════════════════════
    게임 시작
 ════════════════════════════════════ */
 function startGame() {
-    const name = document.getElementById('playerNameInput').value.trim();
-    if (!name) { alert('닉네임을 입력해주세요!'); return; }
-    G.name = name;
-    document.getElementById('playerInfo').textContent = '👤 ' + name;
-    showOnly('gameScreen');
-    initGame();
+  const name = document.getElementById('playerNameInput').value.trim();
+  if (!name) { alert('닉네임을 입력해주세요!'); return; }
+  G.name = name;
+  document.getElementById('playerInfo').textContent = '👤 ' + name;
+
+  // 입장 채팅 메시지
+  if (fbReady) {
+    db.collection('chats').add({
+      name : '🎮 시스템',
+      text : `${name} 님이 게임을 시작했습니다!`,
+      score: 0,
+      ts   : firebase.firestore.FieldValue.serverTimestamp()
+    }).catch(()=>{});
+  }
+
+  showOnly('gameScreen');
+  initGame();
 }
 
 function initGame() {
-    stopMov(); stopCam();
-    G.level=1; G.playing=false; G.started=true;
-    G.stack=[]; G.movSpeed=SPD_INIT;
-    G.camY=0; G.camTarget=0;
+  stopMov(); stopCam();
+  G.level=1; G.playing=false; G.started=true;
+  G.stack=[]; G.movSpeed=SPD_INIT;
+  G.camY=0; G.camTarget=0;
 
-    G.cW = gc.offsetWidth;
-    G.cH = gc.offsetHeight;
-    G.vpH = calcVpH();
+  G.cW = gc.offsetWidth;
+  G.cH = gc.offsetHeight;
+  G.vpH = calcVpH();
 
-    vp.style.height    = G.vpH + 'px';
-    vp.innerHTML       = '';
-    vp.style.transform = 'translateY(0)';
-    document.getElementById('levelDisplay').textContent = '1F';
+  vp.style.height    = G.vpH + 'px';
+  vp.innerHTML       = '';
+  vp.style.transform = 'translateY(0)';
+  document.getElementById('levelDisplay').textContent = '1F';
 
-    const first = { left:0, width:G.cW };
-    G.stack.push(first);
-    createFixedBlock(first, 1);
+  const first = { left:0, width:G.cW };
+  G.stack.push(first);
+  createFixedBlock(first, 1);
 
-    G.camY      = G.cH - G.vpH;
-    G.camTarget = G.camY;
-    applyCamera();
+  G.camY      = G.cH - G.vpH;
+  G.camTarget = G.camY;
+  applyCamera();
 
-    setTimeout(() => {
-        G.level = 2;
-        document.getElementById('levelDisplay').textContent = '2F';
-        spawnMoving();
-    }, 400);
+  setTimeout(() => {
+    G.level = 2;
+    document.getElementById('levelDisplay').textContent = '2F';
+    spawnMoving();
+  }, 400);
 }
 
 /* ════════════════════════════════════
    블록 생성
 ════════════════════════════════════ */
 function createFixedBlock(data, level) {
-    const el = document.createElement('div');
-    el.className     = 'block';
-    el.dataset.level = level;
-    const hue = (level * 37) % 360;
-    el.style.background = `linear-gradient(90deg,hsl(${hue},100%,55%),hsl(${(hue+60)%360},100%,60%))`;
-    el.style.left   = data.left + 'px';
-    el.style.width  = data.width + 'px';
-    el.style.height = (BLOCK_H - 8) + 'px';
-    el.style.top    = layerTop(level) + 'px';
-    el.textContent  = level + 'F';
-    vp.appendChild(el);
-    return el;
+  const el = document.createElement('div');
+  el.className     = 'block';
+  el.dataset.level = level;
+  const hue = (level * 37) % 360;
+  el.style.background = `linear-gradient(90deg,hsl(${hue},100%,55%),hsl(${(hue+60)%360},100%,60%))`;
+  el.style.left   = data.left + 'px';
+  el.style.width  = data.width + 'px';
+  el.style.height = (BLOCK_H - 8) + 'px';
+  el.style.top    = layerTop(level) + 'px';
+  el.textContent  = level + 'F';
+  vp.appendChild(el);
+  return el;
 }
 
 /* ════════════════════════════════════
    움직이는 블록
 ════════════════════════════════════ */
 function spawnMoving() {
-    const prev = G.stack[G.stack.length - 1];
-    G.movWidth = prev.width;
-    G.movDir   = -1;
-    G.movLeft  = G.cW;
-    G.movPrevT = null;
+  const prev = G.stack[G.stack.length - 1];
+  G.movWidth = prev.width;
+  G.movDir   = -1;
+  G.movLeft  = G.cW;
+  G.movPrevT = null;
 
-    const el = document.createElement('div');
-    el.className = 'block';
-    el.id = 'movingBlock';
-    const hue = (G.level * 37) % 360;
-    el.style.background = `linear-gradient(90deg,hsl(${hue},100%,55%),hsl(${(hue+60)%360},100%,60%))`;
-    el.style.width  = G.movWidth + 'px';
-    el.style.height = (BLOCK_H - 8) + 'px';
-    el.style.left   = G.movLeft + 'px';
-    el.style.top    = layerTop(G.level) + 'px';
-    el.textContent  = G.level + 'F';
-    vp.appendChild(el);
+  const el = document.createElement('div');
+  el.className = 'block';
+  el.id = 'movingBlock';
+  const hue = (G.level * 37) % 360;
+  el.style.background = `linear-gradient(90deg,hsl(${hue},100%,55%),hsl(${(hue+60)%360},100%,60%))`;
+  el.style.width  = G.movWidth + 'px';
+  el.style.height = (BLOCK_H - 8) + 'px';
+  el.style.left   = G.movLeft + 'px';
+  el.style.top    = layerTop(G.level) + 'px';
+  el.textContent  = G.level + 'F';
+  vp.appendChild(el);
 
-    G.movEl   = el;
-    G.playing = true;
+  G.movEl   = el;
+  G.playing = true;
 
-    updateCamera();
-    G.movRAF = requestAnimationFrame(movLoop);
+  updateCamera();
+  G.movRAF = requestAnimationFrame(movLoop);
 }
 
 function movLoop(ts) {
-    if (!G.playing) return;
-    if (G.movPrevT === null) G.movPrevT = ts;
-    const dt = Math.min((ts - G.movPrevT) / 1000, 0.05);
-    G.movPrevT = ts;
+  if (!G.playing) return;
+  if (G.movPrevT === null) G.movPrevT = ts;
+  const dt = Math.min((ts - G.movPrevT) / 1000, 0.05);
+  G.movPrevT = ts;
 
-    G.movLeft += G.movDir * G.movSpeed * dt;
+  G.movLeft += G.movDir * G.movSpeed * dt;   // ✅ 버그 수정
 
-    if (G.movLeft < -G.movWidth) { G.movLeft = -G.movWidth; G.movDir = 1; }
-    if (G.movLeft > G.cW)        { G.movLeft = G.cW;        G.movDir = -1; }
+  if (G.movLeft < -G.movWidth) { G.movLeft = -G.movWidth; G.movDir = 1; }
+  if (G.movLeft > G.cW)        { G.movLeft = G.cW;        G.movDir = -1; }
 
-    G.movEl.style.left = G.movLeft + 'px';
-    G.movRAF = requestAnimationFrame(movLoop);
+  G.movEl.style.left = G.movLeft + 'px';
+  G.movRAF = requestAnimationFrame(movLoop);
 }
 
 function stopMov() {
-    if (G.movRAF) { cancelAnimationFrame(G.movRAF); G.movRAF = null; }
+  if (G.movRAF) { cancelAnimationFrame(G.movRAF); G.movRAF = null; }
 }
 
 /* ════════════════════════════════════
    카메라
 ════════════════════════════════════ */
 function updateCamera() {
-    const newVpH = calcVpH();
-    if (newVpH > G.vpH) {
-        G.vpH = newVpH;
-        vp.style.height = G.vpH + 'px';
-        rebuildTops();
-    }
-    G.camTarget = CAM_PAD * BLOCK_H - layerTop(G.level);
-    smoothCamera();
+  const newVpH = calcVpH();
+  if (newVpH > G.vpH) {
+    G.vpH = newVpH;
+    vp.style.height = G.vpH + 'px';
+    rebuildTops();
+  }
+  G.camTarget = CAM_PAD * BLOCK_H - layerTop(G.level);
+  smoothCamera();
 }
 
 function rebuildTops() {
-    vp.querySelectorAll('.block').forEach(el => {
-        const lv = parseInt(el.dataset.level || 0);
-        if (lv > 0) el.style.top = layerTop(lv) + 'px';
-    });
-    const mv = document.getElementById('movingBlock');
-    if (mv) mv.style.top = layerTop(G.level) + 'px';
+  vp.querySelectorAll('.block').forEach(el => {
+    const lv = parseInt(el.dataset.level || 0);
+    if (lv > 0) el.style.top = layerTop(lv) + 'px';
+  });
+  const mv = document.getElementById('movingBlock');
+  if (mv) mv.style.top = layerTop(G.level) + 'px';
 }
 
 function applyCamera()  { vp.style.transform = `translateY(${G.camY}px)`; }
 
 function smoothCamera() {
-    stopCam();
-    function tick() {
-        const diff = G.camTarget - G.camY;
-        if (Math.abs(diff) < 0.3) { G.camY = G.camTarget; applyCamera(); return; }
-        G.camY += diff * 0.14;
-        applyCamera();
-        G.camRAF = requestAnimationFrame(tick);
-    }
+  stopCam();
+  function tick() {
+    const diff = G.camTarget - G.camY;
+    if (Math.abs(diff) < 0.3) { G.camY = G.camTarget; applyCamera(); return; }
+    G.camY += diff * 0.14;
+    applyCamera();
     G.camRAF = requestAnimationFrame(tick);
+  }
+  G.camRAF = requestAnimationFrame(tick);
 }
 
 function stopCam() {
-    if (G.camRAF) { cancelAnimationFrame(G.camRAF); G.camRAF = null; }
+  if (G.camRAF) { cancelAnimationFrame(G.camRAF); G.camRAF = null; }
 }
 
 /* ════════════════════════════════════
    판정
 ════════════════════════════════════ */
 function judge() {
-    if (!G.started || !G.playing || !G.movEl) return;
-    G.playing = false;
-    stopMov();
+  if (!G.started || !G.playing || !G.movEl) return;
+  G.playing = false;
+  stopMov();
 
-    const cur  = { left: G.movLeft, width: G.movWidth };
-    const prev = G.stack[G.stack.length - 1];
+  const cur  = { left: G.movLeft, width: G.movWidth };
+  const prev = G.stack[G.stack.length - 1];
 
-    const ol = Math.max(cur.left, prev.left);
-    const or = Math.min(cur.left + cur.width, prev.left + prev.width);
-    const ow = or - ol;
+  const ol = Math.max(cur.left, prev.left);
+  const or = Math.min(cur.left + cur.width, prev.left + prev.width);
+  const ow = or - ol;
 
-    if (ow <= 0) {
-        showJudgment('✖ MISS!', 'miss');
-        flashScreen('rgba(255,0,80,0.45)');
-        triggerGameOver();
-        return;
-    }
+  if (ow <= 0) {
+    showJudgment('✖ MISS!', 'miss');
+    flashScreen('rgba(255,0,80,0.45)');
+    triggerGameOver();
+    return;
+  }
 
-    const cutted    = { left: ol, width: ow };
-    const isPerfect = Math.abs(ol - prev.left) <= 2
-                   && Math.abs(or - (prev.left + prev.width)) <= 2;
+  const cutted    = { left: ol, width: ow };
+  const isPerfect = Math.abs(ol - prev.left) <= 2
+                 && Math.abs(or - (prev.left + prev.width)) <= 2;
 
-    if (isPerfect) {
-        cutted.left  = prev.left;
-        cutted.width = prev.width;
-        showJudgment('⚡ PERFECT!', 'perfect');
-        flashScreen('rgba(0,255,255,0.3)');
-    } else {
-        showJudgment('✂ CUT!', 'cut');
-        flashScreen('rgba(255,170,0,0.2)');
-        spawnDebris(cur, cutted);
-    }
+  if (isPerfect) {
+    cutted.left  = prev.left;
+    cutted.width = prev.width;
+    showJudgment('⚡ PERFECT!', 'perfect');
+    flashScreen('rgba(0,255,255,0.3)');
+  } else {
+    showJudgment('✂ CUT!', 'cut');
+    flashScreen('rgba(255,170,0,0.2)');
+    spawnDebris(cur, cutted);
+  }
 
-    G.movEl.id            = '';
-    G.movEl.dataset.level = G.level;
-    G.movEl.style.left    = cutted.left  + 'px';
-    G.movEl.style.width   = cutted.width + 'px';
-    G.movEl = null;
+  G.movEl.id            = '';
+  G.movEl.dataset.level = G.level;
+  G.movEl.style.left    = cutted.left  + 'px';
+  G.movEl.style.width   = cutted.width + 'px';
+  G.movEl = null;
 
-    G.stack.push(cutted);
-    G.level++;
-    document.getElementById('levelDisplay').textContent = G.level + 'F';
-    G.movSpeed = Math.min(SPD_MAX, G.movSpeed + SPD_INC);
+  G.stack.push(cutted);
+  G.level++;
+  document.getElementById('levelDisplay').textContent = G.level + 'F';
+  G.movSpeed = Math.min(SPD_MAX, G.movSpeed + SPD_INC);
 
-    if (cutted.width <= MIN_W) { triggerGameOver(); return; }
+  if (cutted.width <= MIN_W) { triggerGameOver(); return; }
 
-    setTimeout(() => spawnMoving(), 350);
+  setTimeout(() => spawnMoving(), 350);
 }
 
 /* ════════════════════════════════════
    파편 효과
 ════════════════════════════════════ */
 function spawnDebris(cur, cutted) {
-    const gcRect  = gc.getBoundingClientRect();
-    const blockTop = layerTop(G.level) + G.camY + gcRect.top;
+  const gcRect  = gc.getBoundingClientRect();
+  const blockTop = layerTop(G.level) + G.camY + gcRect.top;
 
-    function makeParticles(startX, dir) {
-        for (let i = 0; i < 5; i++) {
-            const p  = document.createElement('div');
-            p.className = 'debris';
-            const sz = 5 + Math.random() * 10;
-            p.style.width  = sz + 'px';
-            p.style.height = sz + 'px';
-            const hue = (G.level * 37) % 360;
-            p.style.background = `hsl(${hue},100%,60%)`;
-            p.style.left = (gcRect.left + startX + Math.random() * 20 * dir) + 'px';
-            p.style.top  = (blockTop + 3 + Math.random() * 30) + 'px';
-            const dx = dir * (30 + Math.random() * 70);
-            const dy = 40 + Math.random() * 80;
-            const r  = dir * (15 + Math.random() * 45);
-            const t  = 0.5 + Math.random() * 0.4;
-            p.style.setProperty('--dx', dx + 'px');
-            p.style.setProperty('--dy', dy + 'px');
-            p.style.setProperty('--r',  r  + 'deg');
-            p.style.setProperty('--t',  t  + 's');
-            document.body.appendChild(p);
-            setTimeout(() => p.remove(), t * 1000 + 100);
-        }
+  function makeParticles(startX, dir) {
+    for (let i = 0; i < 5; i++) {
+      const p  = document.createElement('div');
+      p.className = 'debris';
+      const sz = 5 + Math.random() * 10;
+      p.style.width  = sz + 'px';
+      p.style.height = sz + 'px';
+      const hue = (G.level * 37) % 360;
+      p.style.background = `hsl(${hue},100%,60%)`;
+      p.style.left = (gcRect.left + startX + Math.random() * 20 * dir) + 'px';  // ✅ 버그 수정
+      p.style.top  = (blockTop + 3 + Math.random() * 30) + 'px';
+      const dx = dir * (30 + Math.random() * 70);   // ✅ 버그 수정
+      const dy = 40 + Math.random() * 80;
+      const r  = dir * (15 + Math.random() * 45);   // ✅ 버그 수정
+      const t  = 0.5 + Math.random() * 0.4;
+      p.style.setProperty('--dx', dx + 'px');
+      p.style.setProperty('--dy', dy + 'px');
+      p.style.setProperty('--r',  r  + 'deg');
+      p.style.setProperty('--t',  t  + 's');
+      document.body.appendChild(p);
+      setTimeout(() => p.remove(), t * 1000 + 100);
     }
+  }
 
-    if (cur.left < cutted.left)
-        makeParticles(cur.left, -1);
-    if (cur.left + cur.width > cutted.left + cutted.width)
-        makeParticles(cutted.left + cutted.width, 1);
+  if (cur.left < cutted.left)
+    makeParticles(cur.left, -1);
+  if (cur.left + cur.width > cutted.left + cutted.width)
+    makeParticles(cutted.left + cutted.width, 1);
 }
 
 /* ════════════════════════════════════
    게임 오버
 ════════════════════════════════════ */
 async function triggerGameOver() {
-    G.playing = false; G.started = false;
-    stopMov(); stopCam();
+  G.playing = false; G.started = false;
+  stopMov(); stopCam();
 
-    const score = G.level - 1;
+  const score = G.level - 1;
 
-    // Firebase에 점수 저장
-    await saveScore(G.name, score);
+  // Firebase에 점수 저장
+  await saveScore(G.name, score);
 
-    // 랭킹 갱신 대기
-    setTimeout(() => {
-        showOnly('gameOverScreen');
-        document.getElementById('finalScore').textContent = score;
+  // 게임 오버 채팅 알림 (10층 이상일 때만)
+  if (fbReady && score >= 10) {
+    db.collection('chats').add({
+      name : '🏆 기록',
+      text : `${G.name} 님이 ${score}F 달성! ${score >= 50 ? '🔥 대단해요!' : score >= 30 ? '👏 잘했어요!' : ''}`,
+      score: 0,
+      ts   : firebase.firestore.FieldValue.serverTimestamp()
+    }).catch(()=>{});
+  }
 
-        // 최고기록 뱃지
-        const best  = G_rankings.find(r => r.name === G.name);
-        const badge = document.getElementById('recordBadge');
-        if (!best || score >= best.score) {
-            badge.className   = 'badge new';
-            badge.textContent = '🎉 새로운 최고 기록!';
-        } else {
-            badge.className   = 'badge old';
-            badge.textContent = `💪 내 최고기록: ${best.score}F`;
-        }
+  setTimeout(() => {
+    showOnly('gameOverScreen');
+    document.getElementById('finalScore').textContent = score;
 
-        // 내 순위
-        const myRankEl = document.getElementById('myRankBadge');
-        const myRank   = getMyRank(G.name);
-        if (myRank) {
-            myRankEl.style.display = 'block';
-            myRankEl.textContent   = `🎯 현재 내 순위: ${myRank}위`;
-        } else {
-            myRankEl.style.display = 'none';
-        }
+    // 최고기록 뱃지
+    const best  = G_rankings.find(r => r.name === G.name);
+    const badge = document.getElementById('recordBadge');
+    if (!best || score >= best.score) {
+      badge.className   = 'badge new';
+      badge.textContent = '🎉 새로운 최고 기록!';
+    } else {
+      badge.className   = 'badge old';
+      badge.textContent = `💪 내 최고기록: ${best.score}F`;
+    }
 
-        renderRanking('gameoverRankingList', 20);
-    }, 1200);
+    // 내 순위
+    const myRankEl = document.getElementById('myRankBadge');
+    const myRank   = getMyRank(G.name);
+    if (myRank) {
+      myRankEl.style.display = 'block';
+      myRankEl.textContent   = `🎯 현재 내 순위: ${myRank}위`;
+    } else {
+      myRankEl.style.display = 'none';
+    }
+
+    renderRanking('gameoverRankingList', 20);
+  }, 1200);
 }
 
 /* ════════════════════════════════════
    연출
 ════════════════════════════════════ */
 function showJudgment(text, type) {
-    const j = document.createElement('div');
-    j.className   = `judgment ${type}`;
-    j.textContent = text;
-    document.body.appendChild(j);
-    setTimeout(() => j.remove(), 750);
+  const j = document.createElement('div');
+  j.className   = `judgment ${type}`;
+  j.textContent = text;
+  document.body.appendChild(j);
+  setTimeout(() => j.remove(), 750);
 }
 
 function flashScreen(color) {
-    const f = document.createElement('div');
-    f.className        = 'flash';
-    f.style.background = color;
-    document.body.appendChild(f);
-    setTimeout(() => f.remove(), 250);
+  const f = document.createElement('div');
+  f.className        = 'flash';
+  f.style.background = color;
+  document.body.appendChild(f);
+  setTimeout(() => f.remove(), 250);
 }
 
 /* ════════════════════════════════════
    입력 이벤트
 ════════════════════════════════════ */
 document.addEventListener('mousedown', e => {
-    if (G.started && G.playing) { e.preventDefault(); judge(); }
+  // 채팅 패널 클릭은 무시
+  if (chatPanel.contains(e.target)) return;
+  if (document.getElementById('chatBtn').contains(e.target)) return;
+  if (G.started && G.playing) { e.preventDefault(); judge(); }
 }, true);
 
 document.addEventListener('touchstart', e => {
-    if (G.started && G.playing) { e.preventDefault(); judge(); }
+  if (chatPanel.contains(e.target)) return;
+  if (document.getElementById('chatBtn').contains(e.target)) return;
+  if (G.started && G.playing) { e.preventDefault(); judge(); }
 }, { passive:false, capture:true });
 
 document.addEventListener('keydown', e => {
-    if ((e.code === 'Space' || e.key === ' ') && G.started && G.playing) {
-        e.preventDefault(); judge();
-    }
+  if ((e.code === 'Space' || e.key === ' ') && G.started && G.playing) {
+    // 채팅 입력창 포커스 중엔 무시
+    if (document.activeElement === chatInput) return;
+    e.preventDefault(); judge();
+  }
 }, true);
 
 /* ════════════════════════════════════
@@ -788,32 +1132,32 @@ document.addEventListener('keydown', e => {
 document.getElementById('btnStart').addEventListener('click', startGame);
 
 document.getElementById('btnShowRanking').addEventListener('click', () => {
-    showOnly('rankingScreen');
-    renderRanking('fullRankingList', 20);
+  showOnly('rankingScreen');
+  renderRanking('fullRankingList', 50);
 });
 
 document.getElementById('btnBackRanking').addEventListener('click', goHome);
 
 document.getElementById('btnMenu').addEventListener('click', () => {
-    if (!G.playing || confirm('게임을 포기하시겠습니까?')) goHome();
+  if (!G.playing || confirm('게임을 포기하시겠습니까?')) goHome();
 });
 
 document.getElementById('btnRestart').addEventListener('click', () => {
-    showOnly('gameScreen');
-    initGame();
+  showOnly('gameScreen');
+  initGame();
 });
 
 document.getElementById('btnHome').addEventListener('click', goHome);
 
 document.getElementById('playerNameInput').addEventListener('keypress', e => {
-    if (e.key === 'Enter') startGame();
+  if (e.key === 'Enter') startGame();
 });
 
 /* ════════════════════════════════════
    앱 시작
 ════════════════════════════════════ */
 window.addEventListener('load', () => {
-    initFirebase();
+  initFirebase();
 });
 </script>
 </body>
