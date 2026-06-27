@@ -7,7 +7,6 @@
 <script src="https://www.gstatic.com/firebasejs/10.7.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.7.0/firebase-firestore-compat.js"></script>
 <style>
-/* ===== 공통 ===== */
 .battle-btn {
   padding: 10px 22px; border: none; border-radius: 10px;
   font-size: 15px; font-weight: bold; cursor: pointer;
@@ -17,13 +16,10 @@
 .battle-btn:active { transform: scale(.95); }
 .battle-btn.primary { background: linear-gradient(135deg,#00c6ff,#0072ff); }
 .battle-btn.danger  { background: linear-gradient(135deg,#ff416c,#ff4b2b); }
-.chat-input-row {
-  display: flex; gap: 6px; padding: 6px;
-}
+.chat-input-row { display: flex; gap: 6px; padding: 6px; }
 .chat-input-row input {
   flex: 1; padding: 8px 10px; border-radius: 8px;
-  border: 1px solid #444; background: #1a1a2e; color: #fff;
-  font-size: 13px;
+  border: 1px solid #444; background: #1a1a2e; color: #fff; font-size: 13px;
 }
 .chat-input-row button {
   padding: 8px 14px; background: #0072ff; color: #fff;
@@ -31,18 +27,14 @@
 }
 .chat-msgs {
   flex: 1; overflow-y: auto; padding: 8px;
-  display: flex; flex-direction: column; gap: 4px;
-  max-height: 140px;
+  display: flex; flex-direction: column; gap: 4px; max-height: 140px;
 }
 .chat-msg { font-size: 12px; color: #ddd; }
 .chat-msg .msg-name { font-weight: bold; color: #00c6ff; margin-right: 4px; }
 .chat-msg.mine .msg-name { color: #ffd700; }
-
-/* ===== 배틀 채팅 메시지 ===== */
 .b-chat-msg { font-size: 12px; color: #ddd; padding: 2px 0; }
 .b-chat-msg .b-chat-name { font-weight: bold; color: #00c6ff; margin-right: 4px; }
 .b-chat-msg.mine .b-chat-name { color: #ffd700; }
-
 .lobby-header { display: flex; align-items: center; gap: 12px; width: 100%; max-width: 400px; }
 .back-btn { background: none; border: none; color: #fff; font-size: 22px; cursor: pointer; padding: 4px 8px; }
 .my-profile-card {
@@ -55,144 +47,127 @@
 .b-profile-wr { color: #ffd700; font-weight: bold; }
 .b-profile-best { color: #00c6ff; font-size: 13px; margin-top: 4px; }
 .lobby-btns { display: flex; gap: 10px; flex-wrap: wrap; justify-content: center; }
-.match-status {
-  font-size: 15px; color: #00c6ff;
-  min-height: 24px; animation: pulse 1s infinite;
-}
-@keyframes pulse { 0%,100%{opacity:1} 50%{opacity:.4} }
 .lobby-ranking-wrap { width: 100%; max-width: 400px; }
 .lobby-ranking-wrap h3 { color: #ffd700; margin-bottom: 8px; font-size: 14px; }
-
-/* 배틀 랭킹 행 */
 .b-rank-row {
   display: flex; align-items: center; gap: 8px;
   padding: 8px 12px; background: #1a1a2e; border-radius: 8px;
-  margin-bottom: 4px; font-size: 13px;
-  border: 1px solid #222;
+  margin-bottom: 4px; font-size: 13px; border: 1px solid #222;
 }
 .b-rank-num { color: #ff00ff; font-weight: bold; width: 26px; font-size: 12px; }
 .b-rank-name { flex: 1; color: #fff; font-weight: bold; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .b-rank-record { color: #aaa; font-size: 12px; margin-right: 4px; }
 .b-rank-wr { color: #ffd700; font-weight: bold; font-size: 12px; }
-
-/* ===== 카운트다운 ===== */
+/* 방 코드 */
+.room-code-display {
+  font-size: 38px; font-weight: 900; color: #00c6ff;
+  letter-spacing: 8px; padding: 14px 20px;
+  background: #0d1230; border: 2px solid #00c6ff;
+  border-radius: 12px; text-align: center;
+  text-shadow: 0 0 20px #00c6ff60;
+}
+.room-section {
+  width: 100%; max-width: 400px; text-align: center;
+  background: #1a1a2e; border-radius: 14px;
+  padding: 18px; border: 1px solid #333;
+}
+.room-section-title { font-size: 13px; color: #aaa; margin-bottom: 10px; }
+.join-code-input {
+  width: 180px; padding: 12px; font-size: 26px;
+  letter-spacing: 6px; text-align: center; text-transform: uppercase;
+  background: #0d1230; border: 2px solid #0072ff;
+  border-radius: 10px; color: #fff; outline: none; font-weight: 900;
+}
+.join-code-input:focus { border-color: #00c6ff; box-shadow: 0 0 10px #00c6ff40; }
+/* 닉네임 변경 모달 */
+#nicknameModal {
+  position: fixed; inset: 0; background: rgba(0,0,0,0.75);
+  z-index: 8000; display: none; align-items: center; justify-content: center;
+}
+#nicknameModal.show { display: flex; }
+.nickname-modal-box {
+  background: #1a1a2e; border: 2px solid #00c6ff;
+  border-radius: 16px; padding: 28px 24px;
+  width: 90%; max-width: 320px; text-align: center;
+}
+.nickname-modal-title { font-size: 18px; font-weight: bold; color: #00c6ff; margin-bottom: 16px; }
+.nickname-modal-input {
+  width: 100%; padding: 11px; font-size: 16px; text-align: center;
+  background: #0d1230; border: 2px solid #333;
+  border-radius: 10px; color: #fff; outline: none; margin-bottom: 8px;
+}
+.nickname-modal-input:focus { border-color: #00c6ff; }
+.nickname-modal-msg { font-size: 12px; min-height: 18px; margin-bottom: 12px; color: #ff6699; }
+.nickname-modal-btns { display: flex; gap: 8px; justify-content: center; }
 #battleCountdownScreen {
   display: flex; flex-direction: column; align-items: center;
   justify-content: center; gap: 10px; padding: 20px;
   background: radial-gradient(circle,#0f0c29,#302b63,#24243e);
 }
-.countdown-vs {
-  display: flex; align-items: center; gap: 20px;
-  font-size: 18px; font-weight: bold; color: #fff;
-}
+.countdown-vs { display: flex; align-items: center; gap: 20px; font-size: 18px; font-weight: bold; color: #fff; }
 .vs-player { max-width: 130px; text-align: center; word-break: break-all; }
 .vs-text { font-size: 28px; color: #ff4b2b; }
 .cd-round { font-size: 16px; color: #aaa; }
 .cd-score { font-size: 20px; color: #ffd700; font-weight: bold; }
 .cd-number {
   font-size: 96px; font-weight: 900; color: #00c6ff;
-  text-shadow: 0 0 40px #00c6ff80; line-height: 1;
-  animation: cdPop .4s ease;
+  text-shadow: 0 0 40px #00c6ff80; line-height: 1; animation: cdPop .4s ease;
 }
 @keyframes cdPop { 0%{transform:scale(1.5);opacity:.3} 100%{transform:scale(1);opacity:1} }
 .cd-label { font-size: 16px; color: #aaa; }
 .battle-chat-box {
   width: 100%; max-width: 420px; background: #111;
-  border-radius: 12px; border: 1px solid #333;
-  display: flex; flex-direction: column;
+  border-radius: 12px; border: 1px solid #333; display: flex; flex-direction: column;
 }
-
-/* ===== 대전 게임 화면 ===== */
 #battleScreen {
   display: flex; flex-direction: column;
-  height: 100dvh; background: #0a0a12; overflow: hidden;
-  padding: 0;
+  height: 100dvh; background: #0a0a12; overflow: hidden; padding: 0;
 }
 .battle-header {
   display: flex; align-items: center; justify-content: space-between;
-  padding: 6px 10px; background: #111; border-bottom: 1px solid #333;
-  flex-shrink: 0;
+  padding: 6px 10px; background: #111; border-bottom: 1px solid #333; flex-shrink: 0;
 }
-.battle-player-info {
-  display: flex; align-items: center; gap: 6px; flex: 1;
-}
+.battle-player-info { display: flex; align-items: center; gap: 6px; flex: 1; }
 .battle-player-info.right { flex-direction: row-reverse; }
 .b-name { font-size: 13px; font-weight: bold; color: #fff; }
 .b-floor { font-size: 16px; font-weight: 900; color: #00c6ff; }
 .b-wins { font-size: 11px; letter-spacing: 2px; }
 .battle-center { text-align: center; }
-.battle-timer {
-  font-size: 28px; font-weight: 900; color: #fff;
-  transition: color .3s;
-}
+.battle-timer { font-size: 28px; font-weight: 900; color: #fff; transition: color .3s; }
 .battle-timer.danger { color: #ff4b2b; animation: pulse .5s infinite; }
 .battle-round { font-size: 11px; color: #aaa; }
-.battle-arena {
-  display: flex; flex: 1; overflow: hidden;
-}
+.battle-arena { display: flex; flex: 1; overflow: hidden; }
 .battle-pane {
   flex: 1; display: flex; flex-direction: column; align-items: center;
   position: relative; border-right: 1px solid #333;
 }
 .battle-pane:last-child { border-right: none; }
-.pane-label {
-  font-size: 11px; color: #aaa; padding: 3px 0;
-  background: #111; width: 100%; text-align: center;
-}
-.battle-game-area {
-  width: 100%; flex: 1; position: relative; overflow: hidden;
-  background: #0d0d1a;
-}
-.opponent-area {
-  display: flex; flex-direction: column;
-  align-items: center; justify-content: flex-end;
-  padding-bottom: 10px;
-}
-.opp-stack-viz {
-  width: 60%; display: flex; flex-direction: column-reverse;
-  gap: 2px; align-items: center;
-}
-.opp-block {
-  height: 8px; background: linear-gradient(90deg,#00c6ff,#0072ff);
-  border-radius: 2px; transition: width .3s;
-}
+.pane-label { font-size: 11px; color: #aaa; padding: 3px 0; background: #111; width: 100%; text-align: center; }
+.battle-game-area { width: 100%; flex: 1; position: relative; overflow: hidden; background: #0d0d1a; }
+.opponent-area { display: flex; flex-direction: column; align-items: center; justify-content: flex-end; padding-bottom: 10px; }
+.opp-stack-viz { width: 60%; display: flex; flex-direction: column-reverse; gap: 2px; align-items: center; }
+.opp-block { height: 8px; background: linear-gradient(90deg,#00c6ff,#0072ff); border-radius: 2px; transition: width .3s; }
 .opp-floor-num {
   font-size: 64px; font-weight: 900; color: #00c6ff44;
   position: absolute; top: 50%; left: 50%; transform: translate(-50%,-50%);
 }
-.opp-status {
-  font-size: 14px; color: #aaa; margin-top: 8px;
-}
-.battle-chat-box.ingame {
-  max-height: 160px; background: #0a0a12;
-  border-top: 1px solid #222;
-  flex-shrink: 0;
-}
-
-/* ===== 라운드 결과 ===== */
+.opp-status { font-size: 14px; color: #aaa; margin-top: 8px; }
+.battle-chat-box.ingame { max-height: 160px; background: #0a0a12; border-top: 1px solid #222; flex-shrink: 0; }
 #roundResultScreen {
   display: flex; flex-direction: column; align-items: center;
   justify-content: center; gap: 16px; padding: 30px;
   background: radial-gradient(circle,#0f0c29,#1a1a2e);
 }
-.rr-title {
-  font-size: 48px; font-weight: 900;
-  animation: bounceIn .5s;
-}
+.rr-title { font-size: 48px; font-weight: 900; animation: bounceIn .5s; }
 @keyframes bounceIn {
   0%{transform:scale(.3);opacity:0} 60%{transform:scale(1.1)} 100%{transform:scale(1);opacity:1}
 }
 .rr-detail { font-size: 18px; color: #ddd; }
-.rr-scoreboard {
-  background: #111; border-radius: 14px; padding: 16px 28px;
-  font-size: 20px; text-align: center; color: #fff;
-}
+.rr-scoreboard { background: #111; border-radius: 14px; padding: 16px 28px; font-size: 20px; text-align: center; color: #fff; }
 .rr-next { font-size: 14px; color: #aaa; }
 .result-win  { color: #ffd700; text-shadow: 0 0 30px #ffd70080; }
 .result-lose { color: #ff4b2b; text-shadow: 0 0 30px #ff4b2b80; }
 .result-draw { color: #aaa;    text-shadow: 0 0 30px #aaa4; }
-
-/* ===== 최종 결과 ===== */
 #matchResultScreen {
   display: flex; flex-direction: column; align-items: center;
   justify-content: center; gap: 18px; padding: 30px;
@@ -202,74 +177,49 @@
 .mr-score { font-size: 20px; color: #fff; font-weight: bold; text-align: center; }
 .mr-stats { font-size: 14px; color: #aaa; text-align: center; }
 .mr-btns { display: flex; gap: 10px; flex-wrap: wrap; justify-content: center; }
-
-/* ===== 배틀 유저 팝업 ===== */
 #battleUserPopup {
   position: fixed; z-index: 9999; top: 50%; left: 50%;
   transform: translate(-50%,-50%);
   background: #1a1a2e; border: 1px solid #333; border-radius: 16px;
   padding: 24px 28px; min-width: 240px; text-align: center;
-  box-shadow: 0 8px 40px #0008;
-  animation: popIn .2s ease;
+  box-shadow: 0 8px 40px #0008; animation: popIn .2s ease;
 }
 @keyframes popIn {
   from{transform:translate(-50%,-50%) scale(.8);opacity:0}
   to{transform:translate(-50%,-50%) scale(1);opacity:1}
 }
-#battlePopupOverlay {
-  position: fixed; inset: 0; z-index: 9998;
-  background: rgba(0,0,0,0.5);
-}
+#battlePopupOverlay { position: fixed; inset: 0; z-index: 9998; background: rgba(0,0,0,0.5); }
 .b-popup-name { font-size: 20px; font-weight: bold; color: #fff; margin-bottom: 8px; }
 .b-popup-stats { font-size: 13px; color: #aaa; margin-bottom: 14px; line-height: 1.7; }
 .b-popup-btns { display: flex; gap: 8px; justify-content: center; flex-wrap: wrap; }
-
-/* ===== 대전 신청 팝업 ===== */
 #challengePopupBox {
   position: fixed; z-index: 9999; bottom: 30px; left: 50%;
   transform: translateX(-50%);
   background: #1a1a2e; border: 2px solid #0072ff; border-radius: 16px;
   padding: 20px 28px; text-align: center;
-  box-shadow: 0 8px 40px #0072ff40;
-  animation: slideUp .3s ease;
-  min-width: 280px;
+  box-shadow: 0 8px 40px #0072ff40; animation: slideUp .3s ease; min-width: 280px;
 }
 @keyframes slideUp {
   from{transform:translateX(-50%) translateY(80px);opacity:0}
   to{transform:translateX(-50%) translateY(0);opacity:1}
 }
 .challenge-from { font-size: 18px; font-weight: bold; color: #00c6ff; margin-bottom: 4px; }
-
-/* ===== DM 배틀 화면 ===== */
-#dmBattleScreen {
-  display: flex; flex-direction: column;
-  height: 100dvh; background: #0a0a12;
-}
+#dmBattleScreen { display: flex; flex-direction: column; height: 100dvh; background: #0a0a12; }
 .dm-b-header {
   display: flex; align-items: center; gap: 10px;
-  padding: 10px 14px; background: #111; border-bottom: 1px solid #333;
-  flex-shrink: 0;
+  padding: 10px 14px; background: #111; border-bottom: 1px solid #333; flex-shrink: 0;
 }
 .dm-b-header button { background: none; border: none; color: #fff; font-size: 20px; cursor: pointer; }
 .dm-b-target { font-size: 16px; font-weight: bold; color: #fff; }
-#dmBMessages {
-  flex: 1; overflow-y: auto; padding: 12px;
-  display: flex; flex-direction: column; gap: 8px;
-}
+#dmBMessages { flex: 1; overflow-y: auto; padding: 12px; display: flex; flex-direction: column; gap: 8px; }
 .bdm-msg { max-width: 75%; display: flex; flex-direction: column; }
 .bdm-msg.mine { align-self: flex-end; }
 .bdm-msg.theirs { align-self: flex-start; }
-.bdm-bubble {
-  padding: 8px 12px; border-radius: 14px; font-size: 13px;
-  word-break: break-word; line-height: 1.5;
-}
+.bdm-bubble { padding: 8px 12px; border-radius: 14px; font-size: 13px; word-break: break-word; line-height: 1.5; }
 .bdm-msg.mine .bdm-bubble   { background: #0072ff; color: #fff; border-bottom-right-radius: 4px; }
 .bdm-msg.theirs .bdm-bubble { background: #2a2a3e; color: #ddd; border-bottom-left-radius: 4px; }
 .bdm-time { font-size: 10px; color: #555; margin-top: 2px; text-align: right; }
-.dm-b-input-row {
-  padding: 8px; border-top: 1px solid #333;
-  background: #111; display: flex; gap: 8px; flex-shrink: 0;
-}
+.dm-b-input-row { padding: 8px; border-top: 1px solid #333; background: #111; display: flex; gap: 8px; flex-shrink: 0; }
 .dm-b-input-row input {
   flex: 1; padding: 9px 12px; font-size: 13px;
   background: rgba(255,0,255,0.05); border: 1px solid rgba(255,0,255,0.25);
@@ -277,33 +227,24 @@
 }
 .dm-b-input-row button {
   padding: 9px 14px; font-size: 13px; font-weight: bold;
-  background: linear-gradient(90deg,#ff00ff,#ff6600); color: #fff;
-  border: none; border-radius: 8px; cursor: pointer;
+  background: linear-gradient(90deg,#ff00ff,#ff6600); color: #fff; border: none; border-radius: 8px; cursor: pointer;
 }
-
 * { margin:0; padding:0; box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
 html, body {
-  width:100%; height:100%;
-  font-family:'Segoe UI',sans-serif;
+  width:100%; height:100%; font-family:'Segoe UI',sans-serif;
   background:linear-gradient(135deg,#0a0e27,#1a1f3a);
-  color:#fff; overflow:hidden; touch-action:manipulation;
-  position:fixed;
+  color:#fff; overflow:hidden; touch-action:manipulation; position:fixed;
 }
 body { display:flex; justify-content:center; align-items:center; }
 .screen {
-  position:fixed; inset:0;
-  background:rgba(10,14,39,0.98);
-  display:flex; flex-direction:column;
-  justify-content:center; align-items:center;
-  z-index:2000; backdrop-filter:blur(10px);
-  padding:20px; overflow-y:auto;
+  position:fixed; inset:0; background:rgba(10,14,39,0.98);
+  display:flex; flex-direction:column; justify-content:center; align-items:center;
+  z-index:2000; backdrop-filter:blur(10px); padding:20px; overflow-y:auto;
 }
 .screen.hidden { display:none !important; }
 .auth-box {
-  width:100%; max-width:360px;
-  background:rgba(255,255,255,0.03);
-  border:2px solid rgba(0,255,255,0.2);
-  border-radius:20px; padding:32px 28px; text-align:center;
+  width:100%; max-width:360px; background:rgba(255,255,255,0.03);
+  border:2px solid rgba(0,255,255,0.2); border-radius:20px; padding:32px 28px; text-align:center;
 }
 .auth-logo {
   font-size:clamp(1.8rem,8vw,2.8rem); font-weight:900; letter-spacing:2px;
@@ -327,8 +268,7 @@ body { display:flex; justify-content:center; align-items:center; }
 .auth-input-group label { display:block; font-size:0.75rem; color:#666; margin-bottom:5px; text-align:left; padding-left:2px; }
 .auth-input {
   width:100%; padding:12px 14px; font-size:0.92rem;
-  background:rgba(255,255,255,0.05);
-  border:1.5px solid rgba(0,255,255,0.2);
+  background:rgba(255,255,255,0.05); border:1.5px solid rgba(0,255,255,0.2);
   border-radius:10px; color:#fff; outline:none; transition:border-color 0.2s;
 }
 .auth-input:focus { border-color:#00ffff; background:rgba(0,255,255,0.05); }
@@ -343,8 +283,8 @@ body { display:flex; justify-content:center; align-items:center; }
   color:#000; border:none; border-radius:10px; cursor:pointer;
   transition:transform 0.15s,opacity 0.15s; letter-spacing:1px; text-transform:uppercase;
 }
-.auth-btn:active  { transform:scale(0.97); }
-.auth-btn:disabled{ opacity:0.5; cursor:not-allowed; }
+.auth-btn:active { transform:scale(0.97); }
+.auth-btn:disabled { opacity:0.5; cursor:not-allowed; }
 .auth-msg {
   font-size:0.82rem; padding:10px 14px; border-radius:8px;
   margin-top:4px; display:none; line-height:1.5; word-break:keep-all;
@@ -374,6 +314,12 @@ body { display:flex; justify-content:center; align-items:center; }
   color:#ff0066; border-radius:6px; cursor:pointer; transition:all 0.15s;
 }
 .logout-btn:hover { background:#ff0066; color:#fff; }
+.change-nick-btn {
+  padding:4px 9px; font-size:0.72rem; font-weight:bold;
+  background:rgba(0,198,255,0.12); border:1px solid #00c6ff;
+  color:#00c6ff; border-radius:6px; cursor:pointer; transition:all 0.15s;
+}
+.change-nick-btn:hover { background:#00c6ff; color:#000; }
 .modal-buttons { display:flex; gap:10px; justify-content:center; margin-bottom:22px; flex-wrap:wrap; }
 .btn {
   padding:12px 28px; font-size:0.93rem; font-weight:bold;
@@ -396,14 +342,14 @@ body { display:flex; justify-content:center; align-items:center; }
 .rank-loading { color:#aaa; text-align:center; padding:16px; font-size:0.85rem; animation:pulse 1.2s ease infinite; }
 .conn-status {
   display:inline-flex; align-items:center; gap:6px;
-  font-size:0.78rem; margin-bottom:14px;
-  padding:5px 12px; border-radius:20px; border:1px solid;
+  font-size:0.78rem; margin-bottom:14px; padding:5px 12px; border-radius:20px; border:1px solid;
 }
 .conn-status.online  { color:#00ff88; border-color:#00ff88; background:rgba(0,255,136,0.08); }
 .conn-status.offline { color:#ff4466; border-color:#ff4466; background:rgba(255,68,102,0.08); }
 .conn-dot { width:7px; height:7px; border-radius:50%; background:currentColor; }
 .conn-status.online .conn-dot { animation:blink 1.2s ease infinite; }
 @keyframes blink { 0%,100%{opacity:1} 50%{opacity:0.2} }
+@keyframes pulse { 0%,100%{opacity:1} 50%{opacity:.4} }
 .rank-item {
   display:flex; justify-content:space-between; align-items:center;
   padding:8px 0; border-bottom:1px solid rgba(0,255,255,0.1); font-size:0.86rem;
@@ -435,13 +381,11 @@ body { display:flex; justify-content:center; align-items:center; }
   position:absolute; top:0; bottom:0;
   border-left:1px solid rgba(0,255,255,0.07);
   border-right:1px solid rgba(0,255,255,0.07);
-  background:rgba(0,255,255,0.012);
-  pointer-events:none; z-index:1;
+  background:rgba(0,255,255,0.012); pointer-events:none; z-index:1;
 }
 #maskLeft, #maskRight {
   position:absolute; top:0; bottom:0;
-  background:rgba(0,0,0,0.35);
-  pointer-events:none; z-index:2;
+  background:rgba(0,0,0,0.35); pointer-events:none; z-index:2;
 }
 #maskLeft  { left:0; }
 #maskRight { right:0; }
@@ -584,8 +528,20 @@ body { display:flex; justify-content:center; align-items:center; }
 </head>
 <body>
 
-<!-- ===== 대전 로비 ===== -->
-<!-- hidden 초기 상태, 내부 래퍼에 스타일 이동 -->
+<!-- 닉네임 변경 모달 -->
+<div id="nicknameModal">
+  <div class="nickname-modal-box">
+    <div class="nickname-modal-title">✏️ 닉네임 변경</div>
+    <input id="newNicknameInput" class="nickname-modal-input" placeholder="새 닉네임 (2~12자)" maxlength="12" autocomplete="off">
+    <div id="nicknameChangeMsg" class="nickname-modal-msg"></div>
+    <div class="nickname-modal-btns">
+      <button class="battle-btn primary" onclick="confirmNicknameChange()">변경</button>
+      <button class="battle-btn" onclick="closeNicknameModal()">취소</button>
+    </div>
+  </div>
+</div>
+
+<!-- 대전 로비 -->
 <div id="battleLobbyScreen" class="screen hidden" style="padding:20px;overflow-y:auto;">
   <div style="width:100%;max-width:400px;display:flex;flex-direction:column;gap:12px;align-items:center;">
     <div class="lobby-header">
@@ -595,18 +551,38 @@ body { display:flex; justify-content:center; align-items:center; }
     <div id="myBattleProfile" class="my-profile-card">
       <div class="b-profile-name">로딩 중...</div>
     </div>
-    <div class="lobby-btns">
-      <button id="findMatchBtn" class="battle-btn primary">🔍 랜덤 매칭</button>
-      <button id="cancelMatchBtn" class="battle-btn danger" style="display:none">❌ 매칭 취소</button>
+    <!-- 메인 버튼 -->
+    <div id="lobbyMainBtns" class="lobby-btns">
+      <button id="createRoomBtn" class="battle-btn primary">🎮 방 만들기</button>
+      <button id="joinRoomBtn" class="battle-btn">🚪 코드로 참여</button>
     </div>
-    <div id="matchStatus" class="match-status"></div>
+    <!-- 방 만들기 UI -->
+    <div id="roomCreateBox" class="room-section" style="display:none;">
+      <div class="room-section-title">📋 상대방에게 이 코드를 알려주세요</div>
+      <div id="myRoomCode" class="room-code-display">------</div>
+      <div style="color:#aaa;font-size:12px;margin-top:8px;animation:pulse 1s infinite;">
+        ⏳ 상대방이 입장하기를 기다리는 중...
+      </div>
+      <button id="cancelRoomBtn" class="battle-btn danger" style="margin-top:10px;">❌ 취소</button>
+    </div>
+    <!-- 방 참여 UI -->
+    <div id="roomJoinBox" class="room-section" style="display:none;">
+      <div class="room-section-title">🔑 방 코드를 입력하세요</div>
+      <input id="joinCodeInput" class="join-code-input" placeholder="XXXXXX" maxlength="6" autocomplete="off">
+      <div id="joinRoomMsg" style="font-size:12px;color:#ff6699;min-height:18px;margin-top:6px;"></div>
+      <div style="display:flex;gap:8px;justify-content:center;margin-top:10px;">
+        <button id="confirmJoinBtn" class="battle-btn primary">✅ 입장</button>
+        <button id="cancelJoinBtn" class="battle-btn danger">❌ 취소</button>
+      </div>
+    </div>
     <div class="lobby-ranking-wrap">
       <h3 style="color:#ffd700;margin-bottom:8px;">🏆 대전 랭킹</h3>
       <div id="battleRankingList"><div class="rank-loading">불러오는 중...</div></div>
     </div>
   </div>
 </div>
-<!-- ===== 카운트다운 화면 ===== -->
+
+<!-- 카운트다운 -->
 <div id="battleCountdownScreen" class="screen hidden">
   <div class="countdown-vs">
     <div class="vs-player" id="cdP1Name"></div>
@@ -626,7 +602,7 @@ body { display:flex; justify-content:center; align-items:center; }
   </div>
 </div>
 
-<!-- ===== 대전 게임 화면 ===== -->
+<!-- 대전 게임 화면 -->
 <div id="battleScreen" class="screen hidden" style="padding:0;justify-content:flex-start;">
   <div class="battle-header">
     <div class="battle-player-info left">
@@ -666,7 +642,7 @@ body { display:flex; justify-content:center; align-items:center; }
   </div>
 </div>
 
-<!-- ===== 라운드 결과 ===== -->
+<!-- 라운드 결과 -->
 <div id="roundResultScreen" class="screen hidden">
   <div id="rrTitle" class="rr-title"></div>
   <div id="rrDetail" class="rr-detail"></div>
@@ -674,7 +650,7 @@ body { display:flex; justify-content:center; align-items:center; }
   <div id="rrNextInfo" class="rr-next"></div>
 </div>
 
-<!-- ===== 최종 매치 결과 ===== -->
+<!-- 최종 매치 결과 -->
 <div id="matchResultScreen" class="screen hidden">
   <div id="mrTitle" class="mr-title"></div>
   <div id="mrScore" class="mr-score"></div>
@@ -685,7 +661,7 @@ body { display:flex; justify-content:center; align-items:center; }
   </div>
 </div>
 
-<!-- ===== 배틀 DM 화면 ===== -->
+<!-- 배틀 DM -->
 <div id="dmBattleScreen" class="screen hidden" style="padding:0;justify-content:flex-start;">
   <div class="dm-b-header">
     <button id="dmBBack">←</button>
@@ -699,7 +675,7 @@ body { display:flex; justify-content:center; align-items:center; }
   </div>
 </div>
 
-<!-- ===== 배틀 유저 팝업 ===== -->
+<!-- 팝업들 -->
 <div id="battlePopupOverlay" style="display:none;position:fixed;inset:0;z-index:9998;background:rgba(0,0,0,0.5);"></div>
 <div id="battleUserPopup" style="display:none;">
   <div class="b-popup-name" id="bPopupName"></div>
@@ -709,8 +685,6 @@ body { display:flex; justify-content:center; align-items:center; }
     <button class="battle-btn primary" id="bPopupChallenge">⚔️ 대전신청</button>
   </div>
 </div>
-
-<!-- ===== 대전 신청 수신 팝업 ===== -->
 <div id="challengePopupBox" style="display:none;">
   <div id="challengeFromName" class="challenge-from"></div>
   <p style="color:#ddd;margin:6px 0 14px;">님이 대전을 신청했습니다!</p>
@@ -720,14 +694,14 @@ body { display:flex; justify-content:center; align-items:center; }
   </div>
 </div>
 
-<!-- ===== 인증 화면 ===== -->
+<!-- 인증 화면 -->
 <div class="screen" id="authScreen">
   <div class="auth-box">
     <div class="auth-logo">STACK RUSH</div>
     <div class="auth-sub">계정으로 로그인하고 게임을 시작하세요</div>
     <div class="auth-tabs">
       <button class="auth-tab active" id="tabLoginBtn" onclick="switchAuthTab('login')">🔑 로그인</button>
-      <button class="auth-tab"        id="tabSignupBtn" onclick="switchAuthTab('signup')">📝 회원가입</button>
+      <button class="auth-tab" id="tabSignupBtn" onclick="switchAuthTab('signup')">📝 회원가입</button>
     </div>
     <div id="loginForm" class="auth-form">
       <div class="auth-input-group">
@@ -773,7 +747,7 @@ body { display:flex; justify-content:center; align-items:center; }
   </div>
 </div>
 
-<!-- ===== 메인 메뉴 ===== -->
+<!-- 메인 메뉴 -->
 <div class="screen hidden" id="nameModal">
   <div class="modal-content">
     <h1>STACK RUSH</h1>
@@ -786,14 +760,15 @@ body { display:flex; justify-content:center; align-items:center; }
         <div class="user-bar-name" id="userBarName"></div>
         <div style="font-size:0.72rem;color:#666;margin-top:2px;" id="userBarId"></div>
       </div>
-      <button class="logout-btn" onclick="doLogout()">로그아웃</button>
+      <div style="display:flex;gap:6px;align-items:center;">
+        <button class="change-nick-btn" onclick="showNicknameModal()">✏️ 닉네임</button>
+        <button class="logout-btn" onclick="doLogout()">로그아웃</button>
+      </div>
     </div>
-    <!-- 대전하기 버튼 -->
-    <button id="btnBattleLobby" class="btn" 
-  onclick="openBattleLobby()"
-  style="width:100%;margin-bottom:12px;background:linear-gradient(135deg,#7b2ff7,#f107a3);color:#fff;font-size:1rem;">
-  ⚔️ 1:1 대전하기
-</button>
+    <button id="btnBattleLobby" class="btn"
+      style="width:100%;margin-bottom:12px;background:linear-gradient(135deg,#7b2ff7,#f107a3);color:#fff;font-size:1rem;">
+      ⚔️ 1:1 대전하기
+    </button>
     <p>🌍 전 세계 사람들과 경쟁하세요!</p>
     <div class="modal-buttons">
       <button class="btn" id="btnStart">▶ 시작</button>
@@ -936,28 +911,21 @@ const FIREBASE_CONFIG = {
 };
 const ADMIN_ID='leehawon0728', ADMIN_PW='asdfghjkl1!@', ADMIN_NICKNAME='이하원(관리자)';
 let db=null, fbReady=false, rankUnsub=null, chatUnsub=null, isAdmin=false, currentUser=null;
+const COL_BATTLES='battles', COL_BCHAT='battle_chats', COL_CHALLENGES='challenges';
 
-const COL_QUEUE='matchmaking_queue', COL_BATTLES='battles',
-      COL_BCHAT='battle_chats', COL_CHALLENGES='challenges';
-
-/* ══════════════════════════════════════
-   배틀 전역 상태 (★ 오타 수정)
-══════════════════════════════════════ */
 const BATTLE = {
   battleId:null, isP1:false, myKey:'', oppKey:'',
   myName:'', oppName:'', oppId:'',
   myWins:0, oppWins:0, draws:0, currentRound:1,
   myFloor:0, oppFloor:0,
   timerInterval:null, cdInterval:null,
-  battleListener:null, chatListener:null, matchListener:null,
+  battleListener:null, chatListener:null,
   roundDuration:60,
-  _roundEndHandled:false,
-  _matchEndHandled:false,
-  _oppDoneHandled:false,
-  _floorWatcher:null,
-  _prevScreen:'nameModal',
+  _roundEndHandled:false, _matchEndHandled:false, _oppDoneHandled:false,
+  _floorWatcher:null, _currentRoomId:null,
 };
-const DM_BATTLE = { targetId:'', targetName:'', listener:null, _prev:'nameModal' };
+let _roomWaitListener = null;
+const DM_BATTLE = { targetId:'', targetName:'', listener:null };
 const POPUP_USER = { targetId:'', targetName:'' };
 let _pendingChallengeId = null;
 
@@ -976,7 +944,7 @@ async function hashPw(pw){
 function escapeHtml(s){return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
 
 /* ══════════════════════════════════════
-   화면 전환 (★ menuScreen → nameModal 수정)
+   화면 전환
 ══════════════════════════════════════ */
 const ALL_SCREENS=[
   'authScreen','nameModal','rankingScreen','gameScreen','gameOverScreen',
@@ -989,7 +957,7 @@ function showOnly(id){
     if(el){el.classList.add('hidden');el.style.display='none';}
   });
   const t=document.getElementById(id);
-    if(t){t.classList.remove('hidden');t.style.display='';}
+  if(t){t.classList.remove('hidden');t.style.display='';}
 }
 
 /* ══════════════════════════════════════
@@ -1001,10 +969,7 @@ function initFirebase(){
     db=firebase.firestore(); fbReady=true;
     setConnStatus(true);
     startRankingListener(); startChatListener();
-  }catch(e){
-    console.error(e); setConnStatus(false);
-    setAuthMsg('서버 연결 실패: '+e.message);
-  }
+  }catch(e){console.error(e);setConnStatus(false);setAuthMsg('서버 연결 실패: '+e.message);}
   tryAutoLogin();
 }
 function setConnStatus(online){
@@ -1058,8 +1023,7 @@ async function doSignup(){
     if(!nickSnap.empty){setAuthMsg('이미 사용 중인 닉네임입니다.');btn.disabled=false;return;}
     const pwHash=await hashPw(pw);
     await db.collection('users').add({
-      id, nickname:nick, pwHash,
-      wins:0, draws:0, losses:0, bestScore:0,
+      id,nickname:nick,pwHash,wins:0,draws:0,losses:0,bestScore:0,
       createdAt:firebase.firestore.FieldValue.serverTimestamp()
     });
     setAuthMsg('🎉 회원가입 완료! 로그인해주세요.','success');
@@ -1084,18 +1048,18 @@ async function doLogin(){
     currentUser={id:ADMIN_ID,nickname:ADMIN_NICKNAME,docId:'admin',_admin:true};
     isAdmin=true;
     try{sessionStorage.setItem('srUser',JSON.stringify(currentUser));}catch(e){}
-    btn.disabled=false; setAuthMsg(''); afterLogin(); return;
+    btn.disabled=false;setAuthMsg('');afterLogin();return;
   }
   if(!fbReady){setAuthMsg('서버에 연결되지 않았습니다.');btn.disabled=false;return;}
   try{
     const snap=await db.collection('users').where('id','==',id).limit(1).get();
     if(snap.empty){setAuthMsg('아이디 또는 비밀번호가 틀렸습니다.');btn.disabled=false;return;}
-    const doc=snap.docs[0], data=doc.data();
+    const doc=snap.docs[0],data=doc.data();
     const pwHash=await hashPw(pw);
     if(data.pwHash!==pwHash){setAuthMsg('아이디 또는 비밀번호가 틀렸습니다.');btn.disabled=false;return;}
-    currentUser={id:data.id, nickname:data.nickname, docId:doc.id};
+    currentUser={id:data.id,nickname:data.nickname,docId:doc.id};
     try{sessionStorage.setItem('srUser',JSON.stringify(currentUser));}catch(e){}
-    btn.disabled=false; setAuthMsg(''); afterLogin();
+    btn.disabled=false;setAuthMsg('');afterLogin();
   }catch(e){
     console.error(e);
     if(e.code==='permission-denied') setAuthMsg('⚠️ Firebase 보안 규칙을 설정해주세요.');
@@ -1109,12 +1073,11 @@ function tryAutoLogin(){
     if(!saved)return;
     const u=JSON.parse(saved);
     if(!u||!u.id||!u.nickname)return;
-    currentUser=u; if(u._admin)isAdmin=true; afterLogin();
+    currentUser=u;if(u._admin)isAdmin=true;afterLogin();
   }catch(e){try{sessionStorage.removeItem('srUser');}catch(e2){}}
 }
 function afterLogin(){
-  G.name = currentUser.nickname;
-  G.uid  = currentUser.docId;
+  G.name=currentUser.nickname; G.uid=currentUser.docId;
   document.getElementById('userBarId').textContent='ID: '+currentUser.id;
   if(isAdmin){
     document.getElementById('userBarName').innerHTML=
@@ -1132,23 +1095,69 @@ function afterLogin(){
 function doLogout(){
   showConfirm('로그아웃 하시겠습니까?',()=>{
     cleanupBattle();
-    currentUser=null; isAdmin=false; G.name=''; G.uid='';
+    currentUser=null;isAdmin=false;G.name='';G.uid='';
     try{sessionStorage.removeItem('srUser');}catch(e){}
     document.getElementById('adminBtnRow').style.display='none';
     document.getElementById('loginId').value='';
     document.getElementById('loginPw').value='';
-    setAuthMsg(''); switchAuthTab('login'); showOnly('authScreen');
+    setAuthMsg('');switchAuthTab('login');showOnly('authScreen');
   });
 }
-
-document.getElementById('loginId').addEventListener('keypress', e=>{if(e.key==='Enter')document.getElementById('loginPw').focus();});
-document.getElementById('loginPw').addEventListener('keypress', e=>{if(e.key==='Enter')doLogin();});
-document.getElementById('btnLogin').addEventListener('click',   doLogin);
-document.getElementById('signupId').addEventListener('keypress',  e=>{if(e.key==='Enter')document.getElementById('signupNick').focus();});
+document.getElementById('loginId').addEventListener('keypress',e=>{if(e.key==='Enter')document.getElementById('loginPw').focus();});
+document.getElementById('loginPw').addEventListener('keypress',e=>{if(e.key==='Enter')doLogin();});
+document.getElementById('btnLogin').addEventListener('click',doLogin);
+document.getElementById('signupId').addEventListener('keypress',e=>{if(e.key==='Enter')document.getElementById('signupNick').focus();});
 document.getElementById('signupNick').addEventListener('keypress',e=>{if(e.key==='Enter')document.getElementById('signupPw').focus();});
-document.getElementById('signupPw').addEventListener('keypress',  e=>{if(e.key==='Enter')document.getElementById('signupPw2').focus();});
-document.getElementById('signupPw2').addEventListener('keypress', e=>{if(e.key==='Enter')doSignup();});
-document.getElementById('btnSignup').addEventListener('click',    doSignup);
+document.getElementById('signupPw').addEventListener('keypress',e=>{if(e.key==='Enter')document.getElementById('signupPw2').focus();});
+document.getElementById('signupPw2').addEventListener('keypress',e=>{if(e.key==='Enter')doSignup();});
+document.getElementById('btnSignup').addEventListener('click',doSignup);
+
+/* ══════════════════════════════════════
+   닉네임 변경
+══════════════════════════════════════ */
+function showNicknameModal(){
+  if(!G.uid||G.uid==='admin'){showToast('관리자는 닉네임 변경 불가');return;}
+  document.getElementById('newNicknameInput').value=G.name;
+  document.getElementById('nicknameChangeMsg').textContent='';
+  document.getElementById('nicknameChangeMsg').style.color='#ff6699';
+  document.getElementById('nicknameModal').classList.add('show');
+  setTimeout(()=>{const inp=document.getElementById('newNicknameInput');inp.focus();inp.select();},100);
+}
+function closeNicknameModal(){
+  document.getElementById('nicknameModal').classList.remove('show');
+}
+async function confirmNicknameChange(){
+  const newNick=document.getElementById('newNicknameInput').value.trim();
+  const msgEl=document.getElementById('nicknameChangeMsg');
+  if(!newNick){msgEl.style.color='#ff6699';msgEl.textContent='닉네임을 입력해주세요';return;}
+  if(newNick.length<2||newNick.length>12){msgEl.style.color='#ff6699';msgEl.textContent='닉네임은 2~12자로 입력해주세요';return;}
+  if(newNick===ADMIN_NICKNAME){msgEl.style.color='#ff6699';msgEl.textContent='사용할 수 없는 닉네임입니다';return;}
+  if(newNick===G.name){closeNicknameModal();return;}
+  msgEl.style.color='#00c6ff';msgEl.textContent='⏳ 확인 중...';
+  try{
+    const snap=await db.collection('users').where('nickname','==',newNick).limit(1).get();
+    if(!snap.empty&&snap.docs[0].id!==G.uid){
+      msgEl.style.color='#ff6699';msgEl.textContent='이미 사용 중인 닉네임입니다';return;
+    }
+    await db.collection('users').doc(G.uid).update({nickname:newNick});
+    const scSnap=await db.collection('scores').where('name','==',G.name).limit(1).get();
+    if(!scSnap.empty) await scSnap.docs[0].ref.update({name:newNick});
+    G.name=newNick;
+    currentUser.nickname=newNick;
+    try{sessionStorage.setItem('srUser',JSON.stringify(currentUser));}catch(e){}
+    document.getElementById('userBarName').textContent='👤 '+newNick;
+    document.getElementById('playerInfo').textContent='👤 '+newNick;
+    closeNicknameModal();
+    showToast('✅ 닉네임 변경 완료: '+newNick);
+    await renderMyBattleProfile();
+  }catch(e){
+    msgEl.style.color='#ff6699';msgEl.textContent='오류: '+e.message;
+  }
+}
+document.getElementById('newNicknameInput').addEventListener('keypress',e=>{if(e.key==='Enter')confirmNicknameChange();});
+document.getElementById('nicknameModal').addEventListener('click',e=>{
+  if(e.target===document.getElementById('nicknameModal'))closeNicknameModal();
+});
 
 /* ══════════════════════════════════════
    관리자
@@ -1157,7 +1166,7 @@ document.getElementById('btnAdminPanel').addEventListener('click',()=>{
   if(!isAdmin)return;
   document.getElementById('adminPanel').classList.remove('hidden');
   document.getElementById('nameModal').classList.add('hidden');
-  loadAdminRanking(); loadAdminChat(); loadAdminUsers();
+  loadAdminRanking();loadAdminChat();loadAdminUsers();
 });
 document.getElementById('btnAdminBack').addEventListener('click',()=>{
   document.getElementById('adminPanel').classList.add('hidden');
@@ -1171,10 +1180,10 @@ async function loadAdminRanking(){
   try{
     const snap=await db.collection('scores').orderBy('score','desc').get();
     if(snap.empty){el.innerHTML='<div style="color:#666;text-align:center;padding:16px;">기록 없음</div>';return;}
-    el.innerHTML=''; let i=1;
+    el.innerHTML='';let i=1;
     snap.forEach(doc=>{
       const d=doc.data();
-      const item=document.createElement('div'); item.className='admin-rank-item';
+      const item=document.createElement('div');item.className='admin-rank-item';
       item.innerHTML=`<span style="color:#ff00ff;width:28px;font-size:0.82rem;font-weight:bold;">#${i++}</span><span class="admin-rank-name">${escapeHtml(d.name)}</span><span class="admin-rank-score">${d.score}F</span><button class="admin-del-btn" onclick="adminDeleteScore('${doc.id}','${escapeHtml(d.name)}')">삭제</button>`;
       el.appendChild(item);
     });
@@ -1183,14 +1192,14 @@ async function loadAdminRanking(){
 function adminDeleteScore(docId,name){
   showConfirm(`"${name}"의 기록을 삭제할까요?`,async()=>{
     await db.collection('scores').doc(docId).delete();
-    loadAdminRanking(); showToastMsg(`🗑 ${name} 기록 삭제됨`,'#ff0066');
+    loadAdminRanking();showToastMsg(`🗑 ${name} 기록 삭제됨`,'#ff0066');
   });
 }
 document.getElementById('btnResetAllRanking').addEventListener('click',()=>{
   showConfirm('⚠️ 모든 플레이어의 기록을 초기화할까요?',async()=>{
     const snap=await db.collection('scores').get();
-    const bt=db.batch(); snap.forEach(d=>bt.delete(d.ref));
-    await bt.commit(); loadAdminRanking(); showToastMsg('⚠️ 전체 랭킹 초기화 완료','#ff0066');
+    const bt=db.batch();snap.forEach(d=>bt.delete(d.ref));
+    await bt.commit();loadAdminRanking();showToastMsg('⚠️ 전체 랭킹 초기화 완료','#ff0066');
   },true);
 });
 async function loadAdminChat(){
@@ -1204,22 +1213,22 @@ async function loadAdminChat(){
     snap.forEach(doc=>{
       const d=doc.data();
       const ts=d.ts?new Date(d.ts.toMillis()).toLocaleString('ko-KR'):'';
-      const item=document.createElement('div'); item.className='admin-chat-item';
-      item.innerHTML=`<div class="admin-chat-content"><div class="admin-chat-name">${escapeHtml(d.name)} ${d.type==='dm'?`→ ${escapeHtml(d.to||'')}`:'(전체)'}</div><div class="admin-chat-text">${escapeHtml(d.text)}</div><div class="admin-chat-time">${ts}</div></div><button class="admin-del-btn" onclick="adminDeleteChat('${doc.id}')">삭제</button>`;
+      const item=document.createElement('div');item.className='admin-chat-item';
+      item.innerHTML=`<div class="admin-chat-content"><div class="admin-chat-name">${escapeHtml(d.name)} ${d.type==='dm'?`→ ${escapeHtml(d.to||'')}`:''}</div><div class="admin-chat-text">${escapeHtml(d.text)}</div><div class="admin-chat-time">${ts}</div></div><button class="admin-del-btn" onclick="adminDeleteChat('${doc.id}')">삭제</button>`;
       el.appendChild(item);
     });
   }catch(e){el.innerHTML='<div style="color:#f66;padding:12px;">오류</div>';}
 }
 function adminDeleteChat(docId){
   showConfirm('이 메시지를 삭제할까요?',async()=>{
-    await db.collection('chats').doc(docId).delete(); loadAdminChat();
+    await db.collection('chats').doc(docId).delete();loadAdminChat();
   });
 }
 document.getElementById('btnClearAllChat').addEventListener('click',()=>{
   showConfirm('⚠️ 모든 채팅 메시지를 삭제할까요?',async()=>{
     const snap=await db.collection('chats').get();
-    const bt=db.batch(); snap.forEach(d=>bt.delete(d.ref));
-    await bt.commit(); loadAdminChat(); showToastMsg('🗑 전체 채팅 삭제 완료','#ff0066');
+    const bt=db.batch();snap.forEach(d=>bt.delete(d.ref));
+    await bt.commit();loadAdminChat();showToastMsg('🗑 전체 채팅 삭제 완료','#ff0066');
   },true);
 });
 async function loadAdminUsers(){
@@ -1233,7 +1242,7 @@ async function loadAdminUsers(){
     snap.forEach(doc=>{
       const d=doc.data();
       const ts=d.createdAt?new Date(d.createdAt.toMillis()).toLocaleDateString('ko-KR'):'';
-      const item=document.createElement('div'); item.className='admin-rank-item';
+      const item=document.createElement('div');item.className='admin-rank-item';
       item.innerHTML=`<span class="admin-rank-name"><b style="color:#00ffff;">${escapeHtml(d.nickname)}</b><span style="color:#666;font-size:0.78rem;margin-left:6px;">@${escapeHtml(d.id)}</span></span><span style="color:#444;font-size:0.75rem;margin-right:4px;">${ts}</span><button class="admin-del-btn" onclick="adminDeleteUser('${doc.id}','${escapeHtml(d.nickname)}','${escapeHtml(d.id)}')">삭제</button>`;
       el.appendChild(item);
     });
@@ -1243,9 +1252,8 @@ function adminDeleteUser(docId,nickname,userId){
   showConfirm(`"${nickname}" 계정을 삭제할까요?\n기록도 함께 삭제됩니다.`,async()=>{
     await db.collection('users').doc(docId).delete();
     const sc=await db.collection('scores').where('name','==',nickname).get();
-    const bt=db.batch(); sc.forEach(d=>bt.delete(d.ref));
-    await bt.commit();
-    loadAdminUsers(); loadAdminRanking();
+    const bt=db.batch();sc.forEach(d=>bt.delete(d.ref));
+    await bt.commit();loadAdminUsers();loadAdminRanking();
     showToastMsg(`🗑 ${nickname} 계정 삭제됨`,'#ff0066');
   },true);
 }
@@ -1255,7 +1263,7 @@ function adminDeleteUser(docId,nickname,userId){
 ══════════════════════════════════════ */
 let G_rankings=[];
 function startRankingListener(){
-  if(!fbReady)return; if(rankUnsub)rankUnsub();
+  if(!fbReady)return;if(rankUnsub)rankUnsub();
   rankUnsub=db.collection('scores').orderBy('score','desc').limit(50).onSnapshot(snap=>{
     G_rankings=[];
     snap.forEach(doc=>{const d=doc.data();G_rankings.push({id:doc.id,name:d.name,score:d.score});});
@@ -1274,23 +1282,17 @@ async function saveScore(name,score){
       const doc=snap.docs[0];
       if(score>doc.data().score) await doc.ref.update({score,ts:firebase.firestore.FieldValue.serverTimestamp()});
     }
-    if(currentUser?.docId && currentUser.docId!=='admin'){
+    if(currentUser?.docId&&currentUser.docId!=='admin'){
       const uRef=db.collection('users').doc(currentUser.docId);
       const uSnap=await uRef.get();
-      if(uSnap.exists){
-        const ud=uSnap.data();
-        if(!ud.bestScore||score>ud.bestScore) await uRef.update({bestScore:score});
-      }
+      if(uSnap.exists){const ud=uSnap.data();if(!ud.bestScore||score>ud.bestScore)await uRef.update({bestScore:score});}
     }
   }catch(e){console.warn(e);}
 }
 function renderRanking(cid,limit){
-  const el=document.getElementById(cid); if(!el)return;
+  const el=document.getElementById(cid);if(!el)return;
   const list=G_rankings.slice(0,limit);
-  if(!list.length){
-    el.innerHTML=`<div style="color:#aaa;text-align:center;padding:20px;"><div style="font-size:2rem;margin-bottom:8px;">🏆</div><div>아직 기록이 없습니다</div></div>`;
-    return;
-  }
+  if(!list.length){el.innerHTML=`<div style="color:#aaa;text-align:center;padding:20px;"><div style="font-size:2rem;margin-bottom:8px;">🏆</div><div>아직 기록이 없습니다</div></div>`;return;}
   const medals=['🥇','🥈','🥉'],numCls=['top1','top2','top3'];
   el.innerHTML=list.map((r,i)=>{
     const isMe=r.name===G.name,medal=i<3?medals[i]:`#${i+1}`,cls=i<3?numCls[i]:'';
@@ -1303,12 +1305,11 @@ function getMyRank(name){const idx=G_rankings.findIndex(r=>r.name===name);return
 /* ══════════════════════════════════════
    채팅
 ══════════════════════════════════════ */
-let chatOpen=false, activeTab='global', unreadGlobal=0, unreadDM=0;
+let chatOpen=false,activeTab='global',unreadGlobal=0,unreadDM=0;
 const chatPanel=document.getElementById('chatPanel'),
       chatMessages=document.getElementById('chatMessages'),
       chatInput=document.getElementById('chatInput'),
       chatBadge=document.getElementById('chatBadge');
-
 document.querySelectorAll('.chat-tab').forEach(tab=>{
   tab.addEventListener('click',()=>{
     activeTab=tab.dataset.tab;
@@ -1335,27 +1336,27 @@ document.getElementById('chatClose').addEventListener('click',toggleChat);
 async function sendChat(){
   const text=chatInput.value.trim();
   if(!text||!G.name||!fbReady)return;
-  chatInput.value=''; chatInput.disabled=true;
+  chatInput.value='';chatInput.disabled=true;
   try{
     const ms=G_rankings.find(r=>r.name===G.name);
     await db.collection('chats').add({name:G.name,text,score:ms?ms.score:0,type:'global',ts:firebase.firestore.FieldValue.serverTimestamp()});
   }catch(e){console.warn(e);}
-  chatInput.disabled=false; chatInput.focus();
+  chatInput.disabled=false;chatInput.focus();
 }
 document.getElementById('chatSend').addEventListener('click',sendChat);
 chatInput.addEventListener('keypress',e=>{if(e.key==='Enter')sendChat();});
 function startChatListener(){
-  if(!fbReady)return; if(chatUnsub)chatUnsub();
+  if(!fbReady)return;if(chatUnsub)chatUnsub();
   chatUnsub=db.collection('chats').orderBy('ts','asc').limitToLast(80).onSnapshot(snap=>{
     snap.docChanges().forEach(ch=>{
       if(ch.type==='added'){
         const d=ch.doc.data(),docId=ch.doc.id;
-        if(!d.type||d.type==='global') appendGlobalMsg({id:docId,...d});
-        if(d.type==='dm'&&G.name&&(d.to===G.name||d.from===G.name)) appendDMMsg(d.from===G.name?d.to:d.from,{id:docId,...d});
+        if(!d.type||d.type==='global')appendGlobalMsg({id:docId,...d});
+        if(d.type==='dm'&&G.name&&(d.to===G.name||d.from===G.name))appendDMMsg(d.from===G.name?d.to:d.from,{id:docId,...d});
       }
       if(ch.type==='removed'){
-        const e1=document.getElementById('msg-'+ch.doc.id); if(e1)e1.remove();
-        const e2=document.getElementById('dmmsg-'+ch.doc.id); if(e2)e2.remove();
+        const e1=document.getElementById('msg-'+ch.doc.id);if(e1)e1.remove();
+        const e2=document.getElementById('dmmsg-'+ch.doc.id);if(e2)e2.remove();
       }
     });
   },err=>console.warn(err));
@@ -1363,52 +1364,44 @@ function startChatListener(){
 function appendGlobalMsg(d){
   const{id,name,text,score,ts}=d;
   if(document.getElementById('msg-'+id))return;
-  const isMe=name===G.name, isSys=name==='🎮 시스템'||name==='🏆 기록';
+  const isMe=name===G.name,isSys=name==='🎮 시스템'||name==='🏆 기록';
   const timeStr=ts?new Date(ts.toMillis()).toLocaleTimeString('ko-KR',{hour:'2-digit',minute:'2-digit'}):'';
   const scoreStr=score>0?`<span class="msg-score-badge">🏆${score}F</span>`:'';
   const div=document.createElement('div');
-  div.id='msg-'+id;
-  div.className='chat-msg'+(isMe?' me':'')+(isSys?' system':'');
-  if(isSys){
-    div.innerHTML=`<span class="msg-bubble">${escapeHtml(text)}</span>`;
-  }else{
+  div.id='msg-'+id;div.className='chat-msg'+(isMe?' me':'')+(isSys?' system':'');
+  if(isSys){div.innerHTML=`<span class="msg-bubble">${escapeHtml(text)}</span>`;}
+  else{
     const del=(isMe||isAdmin)?`<button class="msg-del" onclick="deleteMsgConfirm('${id}')">🗑</button>`:'';
     const nameClick=!isMe?`onclick="showUserPopupFromChat(event,'${escapeHtml(name)}')"`:''
     div.innerHTML=`<span class="msg-name ${isMe?'me-name':''}" ${nameClick}>${escapeHtml(name)} ${scoreStr}</span><span class="msg-bubble">${escapeHtml(text)}</span><div class="msg-footer"><span class="msg-time">${timeStr}</span>${del}</div>`;
   }
   chatMessages.appendChild(div);
-  while(chatMessages.children.length>100) chatMessages.removeChild(chatMessages.firstChild);
-  if(chatOpen&&activeTab==='global') chatMessages.scrollTop=chatMessages.scrollHeight;
+  while(chatMessages.children.length>100)chatMessages.removeChild(chatMessages.firstChild);
+  if(chatOpen&&activeTab==='global')chatMessages.scrollTop=chatMessages.scrollHeight;
   else if(!isMe&&!isSys){unreadGlobal++;updateBadges();}
 }
 async function showUserPopupFromChat(e,name){
   closeNamePopup();
-  let uid='', statsData={};
+  let uid='',statsData={};
   try{
     const snap=await db.collection('users').where('nickname','==',name).limit(1).get();
-    if(!snap.empty){uid=snap.docs[0].id; statsData=snap.docs[0].data();}
+    if(!snap.empty){uid=snap.docs[0].id;statsData=snap.docs[0].data();}
   }catch(err){}
-  if(uid && uid!==G.uid){
-    openUserPopup(uid,name,statsData);
-  }else{
-    showNamePopup(e,name);
-  }
+  if(uid&&uid!==G.uid){openUserPopup(uid,name,statsData);}
+  else{showNamePopup(e,name);}
 }
 function showNamePopup(e,name){
   closeNamePopup();
   const rank=G_rankings.find(r=>r.name===name);
-  const popup=document.createElement('div');
-  popup.className='name-popup'; popup.id='namePopup';
-  const x=Math.min(e.clientX,window.innerWidth-190), y=Math.min(e.clientY+10,window.innerHeight-150);
-  popup.style.left=x+'px'; popup.style.top=y+'px';
+  const popup=document.createElement('div');popup.className='name-popup';popup.id='namePopup';
+  const x=Math.min(e.clientX,window.innerWidth-190),y=Math.min(e.clientY+10,window.innerHeight-150);
+  popup.style.left=x+'px';popup.style.top=y+'px';
   popup.innerHTML=`<div class="name-popup-name">${escapeHtml(name)}${rank?`<span class="name-popup-score">🏆 ${rank.score}F</span>`:''}</div><button class="name-popup-btn" onclick="closeNamePopup();openDMWith('${escapeHtml(name)}')">✉️ 귓속말 보내기</button><button class="name-popup-btn close-btn" onclick="closeNamePopup()">닫기</button>`;
   document.body.appendChild(popup);
   setTimeout(()=>document.addEventListener('click',outsidePopupClose,{once:true}),10);
 }
 function outsidePopupClose(e){const p=document.getElementById('namePopup');if(p&&!p.contains(e.target))closeNamePopup();}
 function closeNamePopup(){const p=document.getElementById('namePopup');if(p)p.remove();}
-
-/* DM */
 const dmStore={};let currentDMPartner=null;
 function openDMWith(name){
   if(!G.name||name===G.name)return;
@@ -1427,7 +1420,7 @@ function openDMWith(name){
   renderDMMessages(name);
   setTimeout(()=>{const el=document.getElementById('dmMessages');if(el)el.scrollTop=el.scrollHeight;document.getElementById('dmInput').focus();},80);
   if(dmStore[name])dmStore[name].forEach(m=>m._unread=false);
-  updateDMTabBadge(); updateDMList();
+  updateDMTabBadge();updateDMList();
 }
 document.getElementById('dmBack').addEventListener('click',()=>{
   currentDMPartner=null;
@@ -1458,8 +1451,7 @@ function appendDMMsgDOM(d){
   if(document.getElementById('dmmsg-'+d.id))return;
   const isMe=d.from===G.name;
   const timeStr=d.ts?new Date(d.ts.toMillis()).toLocaleTimeString('ko-KR',{hour:'2-digit',minute:'2-digit'}):'';
-  const div=document.createElement('div');
-  div.id='dmmsg-'+d.id; div.className='chat-msg dm-msg'+(isMe?' me':'');
+  const div=document.createElement('div');div.id='dmmsg-'+d.id;div.className='chat-msg dm-msg'+(isMe?' me':'');
   const del=(isMe||isAdmin)?`<button class="msg-del" onclick="deleteMsgConfirm('${d.id}')">🗑</button>`:'';
   div.innerHTML=`<span class="msg-name ${isMe?'me-name':''}">${escapeHtml(isMe?'나':d.from)}</span><span class="msg-bubble">${escapeHtml(d.text)}</span><div class="msg-footer"><span class="msg-time">${timeStr}</span>${del}</div>`;
   document.getElementById('dmMessages').appendChild(div);
@@ -1477,14 +1469,14 @@ function updateDMList(){
 function updateDMTabBadge(){
   const badge=document.getElementById('dmTabBadge');
   const total=Object.values(dmStore).reduce((s,msgs)=>s+msgs.filter(m=>m._unread).length,0);
-  badge.style.display=total>0?'inline-block':'none'; badge.textContent=total>9?'9+':total;
+  badge.style.display=total>0?'inline-block':'none';badge.textContent=total>9?'9+':total;
 }
 function showDMToast(from,text){
   const old=document.querySelector('.dm-toast');if(old)old.remove();
-  const t=document.createElement('div'); t.className='dm-toast';
+  const t=document.createElement('div');t.className='dm-toast';
   t.innerHTML=`✉️ <b>${escapeHtml(from)}</b><br>${escapeHtml(text.slice(0,30))}${text.length>30?'…':''}`;
   t.onclick=()=>{t.remove();openDMWith(from);};
-  document.body.appendChild(t); setTimeout(()=>{if(t.parentNode)t.remove();},4000);
+  document.body.appendChild(t);setTimeout(()=>{if(t.parentNode)t.remove();},4000);
 }
 function deleteMsgConfirm(docId){
   showConfirm('이 메시지를 삭제할까요?',async()=>{
@@ -1494,10 +1486,10 @@ function deleteMsgConfirm(docId){
 }
 
 /* ══════════════════════════════════════
-   공통 UI 유틸
+   공통 UI
 ══════════════════════════════════════ */
 function showConfirm(msg,onOk,danger=false){
-  const ov=document.createElement('div'); ov.className='confirm-overlay';
+  const ov=document.createElement('div');ov.className='confirm-overlay';
   ov.innerHTML=`<div class="confirm-box"><div class="confirm-title">${danger?'⚠️ 주의':'확인'}</div><p>${escapeHtml(msg)}</p><div class="confirm-btns"><button class="btn sm red" id="cfmOk">${danger?'⚠️ 확인':'삭제'}</button><button class="btn sm" id="cfmNo" style="background:#333;color:#aaa;">취소</button></div></div>`;
   document.body.appendChild(ov);
   ov.querySelector('#cfmOk').onclick=()=>{ov.remove();onOk();};
@@ -1505,26 +1497,22 @@ function showConfirm(msg,onOk,danger=false){
 }
 function showToastMsg(msg,color='#00ffff'){
   const t=document.createElement('div');
-  t.style.cssText=`position:fixed;bottom:30px;left:50%;transform:translateX(-50%);background:rgba(10,14,39,0.97);border:1px solid ${color};color:${color};padding:10px 20px;border-radius:10px;font-size:0.85rem;font-weight:bold;z-index:7000;pointer-events:none;white-space:nowrap;`;
-  t.textContent=msg; document.body.appendChild(t); setTimeout(()=>t.remove(),3000);
+  t.style.cssText=`position:fixed;bottom:30px;left:50%;transform:translateX(-50%);background:rgba(10,14,39,0.97);border:1px solid ${color};color:${color};padding:10px 20px;border-radius:10px;font-size:0.85rem;font-weight:bold;z-index:9000;pointer-events:none;white-space:nowrap;`;
+  t.textContent=msg;document.body.appendChild(t);setTimeout(()=>t.remove(),3000);
 }
 function showToast(msg){showToastMsg(msg,'#00c6ff');}
 
 /* ══════════════════════════════════════
    게임 로직
 ══════════════════════════════════════ */
-const BLOCK_H=56, CAM_PAD=5, MIN_W=6;
-const SPD_INIT=260, SPD_MAX=1200, SPD_MULT=1.05, GAME_W=340;
+const BLOCK_H=56,CAM_PAD=5,MIN_W=6;
+const SPD_INIT=260,SPD_MAX=1200,SPD_MULT=1.05,GAME_W=340;
 const G={
-  name:'', uid:'',
-  level:1, playing:false, started:false,
-  stack:[], movEl:null, movLeft:0, movDir:-1,
-  movWidth:0, movSpeed:SPD_INIT,
-  movRAF:null, movPrevT:null,
-  camY:0, camTarget:0, camRAF:null,
-  cW:0, cH:0, vpH:0,
-  gameW:GAME_W, gameOff:0,
-  hasEntered:false
+  name:'',uid:'',level:1,playing:false,started:false,
+  stack:[],movEl:null,movLeft:0,movDir:-1,
+  movWidth:0,movSpeed:SPD_INIT,movRAF:null,movPrevT:null,
+  camY:0,camTarget:0,camRAF:null,
+  cW:0,cH:0,vpH:0,gameW:GAME_W,gameOff:0,hasEntered:false
 };
 const vp=document.getElementById('viewport');
 const gc=document.getElementById('gameCanvas');
@@ -1535,7 +1523,7 @@ function updateGameArea(){
   maskL.style.width=G.gameOff+'px';
   maskR.style.width=(G.cW-G.gameOff-G.gameW)+'px';
   maskR.style.left=(G.gameOff+G.gameW)+'px';
-  areaEl.style.left=G.gameOff+'px'; areaEl.style.width=G.gameW+'px';
+  areaEl.style.left=G.gameOff+'px';areaEl.style.width=G.gameW+'px';
   if(G.gameOff<=0){maskL.style.display='none';maskR.style.display='none';areaEl.style.borderColor='transparent';}
   else{maskL.style.display='block';maskR.style.display='block';areaEl.style.borderColor='rgba(0,255,255,0.07)';}
 }
@@ -1545,7 +1533,7 @@ function startGame(){
   if(!currentUser){showOnly('authScreen');return;}
   document.getElementById('playerInfo').textContent='👤 '+G.name;
   if(fbReady){db.collection('chats').add({name:'🎮 시스템',text:`${G.name} 님이 게임을 시작했습니다!`,score:0,type:'global',ts:firebase.firestore.FieldValue.serverTimestamp()}).catch(()=>{});}
-  showOnly('gameScreen'); initGame();
+  showOnly('gameScreen');initGame();
 }
 function initGame(){
   stopMov();stopCam();
@@ -1562,18 +1550,13 @@ function initGame(){
 }
 function initBattleGame(){
   const area=document.getElementById('myBattleArea');
-  area.innerHTML='';
-  G.stack=[];G.level=1;G.playing=true;G.started=true;
-  G.movSpeed=SPD_INIT;G.hasEntered=false;
-  BATTLE.myFloor=0;
+  area.innerHTML='';G.stack=[];G.level=1;G.playing=true;G.started=true;
+  G.movSpeed=SPD_INIT;G.hasEntered=false;BATTLE.myFloor=0;
   const origArea=document.getElementById('gameArea');
-  origArea._origParent=origArea.parentNode;
-  origArea._origSibling=origArea.nextSibling;
+  origArea._origParent=origArea.parentNode;origArea._origSibling=origArea.nextSibling;
   area.appendChild(origArea);
-  G.cW=origArea.offsetWidth||GAME_W;
-  G.cH=origArea.offsetHeight||600;
-  G.gameW=Math.min(G.cW,GAME_W);
-  G.gameOff=Math.max(0,Math.floor((G.cW-G.gameW)/2));
+  G.cW=origArea.offsetWidth||GAME_W;G.cH=origArea.offsetHeight||600;
+  G.gameW=Math.min(G.cW,GAME_W);G.gameOff=Math.max(0,Math.floor((G.cW-G.gameW)/2));
   G.vpH=calcVpH();vp.style.height=G.vpH+'px';vp.innerHTML='';vp.style.transform='translateY(0)';
   updateGameArea();updateSpeedHud();
   document.getElementById('levelDisplay').textContent='1F';
@@ -1588,9 +1571,9 @@ function initBattleGame(){
 function restoreBattleGameArea(){
   const origArea=document.getElementById('gameArea');
   if(origArea&&origArea._origParent){
-    if(origArea._origSibling) origArea._origParent.insertBefore(origArea,origArea._origSibling);
+    if(origArea._origSibling)origArea._origParent.insertBefore(origArea,origArea._origSibling);
     else origArea._origParent.appendChild(origArea);
-    origArea._origParent=null; origArea._origSibling=null;
+    origArea._origParent=null;origArea._origSibling=null;
   }
 }
 function createFixedBlock(data,level){
@@ -1602,10 +1585,9 @@ function createFixedBlock(data,level){
 }
 function spawnMoving(){
   const prev=G.stack[G.stack.length-1];
-  G.movWidth=prev.width;
-  G.movDir=Math.random()<0.5?1:-1;
+  G.movWidth=prev.width;G.movDir=Math.random()<0.5?1:-1;
   G.movLeft=G.movDir===1?G.gameOff-G.movWidth:G.gameOff+G.gameW;
-  G.movPrevT=null; G.hasEntered=false;
+  G.movPrevT=null;G.hasEntered=false;
   const el=document.createElement('div');el.className='block';el.id='movingBlock';
   const hue=(G.level*37)%360;el.style.background=`linear-gradient(90deg,hsl(${hue},100%,55%),hsl(${(hue+60)%360},100%,60%))`;
   el.style.width=G.movWidth+'px';el.style.height=(BLOCK_H-8)+'px';
@@ -1618,10 +1600,10 @@ function spawnMoving(){
 function movLoop(ts){
   if(!G.playing||!G.movEl)return;
   if(G.movPrevT===null){G.movPrevT=ts;G.movRAF=requestAnimationFrame(movLoop);return;}
-  const dt=Math.min((ts-G.movPrevT)/1000,0.033);G.movPrevT=ts;
-  const effectiveSpeed=G.movWidth<20?Math.min(G.movSpeed,380):G.movSpeed;
+  const dt=Math.min((ts-G.movPrevT)/1000,0.02);G.movPrevT=ts;
+  const effectiveSpeed=G.movWidth<20?Math.min(G.movSpeed,360):G.movSpeed;
   G.movLeft+=G.movDir*effectiveSpeed*dt;
-  const leftBound=G.gameOff-G.movWidth, rightBound=G.gameOff+G.gameW;
+  const leftBound=G.gameOff-G.movWidth,rightBound=G.gameOff+G.gameW;
   if(G.movLeft<leftBound){G.movLeft=leftBound+(leftBound-G.movLeft);if(G.movLeft>rightBound)G.movLeft=leftBound;G.movDir=1;}
   if(G.movLeft>rightBound){G.movLeft=rightBound-(G.movLeft-rightBound);if(G.movLeft<leftBound)G.movLeft=rightBound;G.movDir=-1;}
   G.movEl.style.left=G.movLeft+'px';
@@ -1630,11 +1612,7 @@ function movLoop(ts){
   if(overlapR>overlapL){G.hasEntered=true;}
   else if(G.hasEntered){
     const clearlyOut=(G.movLeft+G.movWidth<prev.left-4)||(G.movLeft>prev.left+prev.width+4);
-    if(clearlyOut){
-      G.playing=false;stopMov();
-      showJudgment('✖ MISS!','miss');flashScreen('rgba(255,0,80,0.45)');
-      triggerGameOver();return;
-    }
+    if(clearlyOut){G.playing=false;stopMov();showJudgment('✖ MISS!','miss');flashScreen('rgba(255,0,80,0.45)');triggerGameOver();return;}
   }
   G.movRAF=requestAnimationFrame(movLoop);
 }
@@ -1702,7 +1680,7 @@ async function triggerGameOver(){
     await db.collection(COL_BATTLES).doc(BATTLE.battleId).update({
       [`${BATTLE.myKey}Floor`]:floor,[`${BATTLE.myKey}Done`]:true
     }).catch(()=>{});
-    if(BATTLE.isP1) await judgeRound();
+    if(BATTLE.isP1)await judgeRound();
     return;
   }
   G.playing=false;G.started=false;stopMov();stopCam();
@@ -1729,6 +1707,38 @@ function showJudgment(text,type){const j=document.createElement('div');j.classNa
 function flashScreen(color){const f=document.createElement('div');f.className='flash';f.style.background=color;document.body.appendChild(f);setTimeout(()=>f.remove(),250);}
 
 /* ══════════════════════════════════════
+   리사이즈 성능 수정
+══════════════════════════════════════ */
+let _resizeTimer=null;
+window.addEventListener('resize',()=>{
+  clearTimeout(_resizeTimer);
+  _resizeTimer=setTimeout(()=>{
+    if(!G.started)return;
+    const oldGameW=G.gameW,oldGameOff=G.gameOff;
+    G.cW=gc.offsetWidth;G.cH=gc.offsetHeight;
+    const newGameW=Math.min(G.cW,GAME_W);
+    const newGameOff=Math.max(0,Math.floor((G.cW-newGameW)/2));
+    if(newGameW!==oldGameW){
+      const scale=newGameW/oldGameW;
+      G.stack=G.stack.map(s=>({
+        left:newGameOff+(s.left-oldGameOff)*scale,
+        width:Math.max(MIN_W,s.width*scale)
+      }));
+      G.movLeft=newGameOff+(G.movLeft-oldGameOff)*scale;
+      G.movWidth=Math.max(MIN_W,G.movWidth*scale);
+      if(G.movEl){G.movEl.style.left=G.movLeft+'px';G.movEl.style.width=G.movWidth+'px';}
+      const blocks=vp.querySelectorAll('.block:not(#movingBlock)');
+      G.stack.forEach((s,idx)=>{
+        if(blocks[idx]){blocks[idx].style.left=s.left+'px';blocks[idx].style.width=s.width+'px';}
+      });
+    }
+    G.gameW=newGameW;G.gameOff=newGameOff;
+    G.vpH=calcVpH();vp.style.height=G.vpH+'px';
+    rebuildTops();updateGameArea();updateCamera();
+  },150);
+});
+
+/* ══════════════════════════════════════
    배틀 시스템
 ══════════════════════════════════════ */
 async function ensureUserBattleStats(){
@@ -1736,10 +1746,7 @@ async function ensureUserBattleStats(){
   try{
     const ref=db.collection('users').doc(G.uid);
     const snap=await ref.get();
-    if(snap.exists){
-      const d=snap.data();
-      if(d.wins===undefined) await ref.update({wins:0,draws:0,losses:0,bestScore:0});
-    }
+    if(snap.exists){const d=snap.data();if(d.wins===undefined)await ref.update({wins:0,draws:0,losses:0,bestScore:0});}
   }catch(e){console.warn(e);}
 }
 function calcWR(w,d,l){const t=w+d+l;return t===0?0:Math.round((w/t)*100);}
@@ -1749,23 +1756,25 @@ async function updateUserStats(uid,result){
   const ref=db.collection('users').doc(uid);
   const inc=firebase.firestore.FieldValue.increment(1);
   const upd={};
-  if(result==='win') upd.wins=inc;
-  if(result==='draw') upd.draws=inc;
-  if(result==='loss') upd.losses=inc;
+  if(result==='win')upd.wins=inc;
+  if(result==='draw')upd.draws=inc;
+  if(result==='loss')upd.losses=inc;
   await ref.update(upd).catch(async()=>{await ref.set(upd,{merge:true});});
 }
 
 /* ── 배틀 로비 ── */
 async function openBattleLobby(){
-  if(!currentUser){ showOnly('authScreen'); return; }
-  try {
+  if(!currentUser){showOnly('authScreen');return;}
+  try{
+    document.getElementById('lobbyMainBtns').style.display='flex';
+    document.getElementById('roomCreateBox').style.display='none';
+    document.getElementById('roomJoinBox').style.display='none';
+    document.getElementById('joinCodeInput').value='';
+    document.getElementById('joinRoomMsg').textContent='';
     showOnly('battleLobbyScreen');
     await renderMyBattleProfile();
     await loadBattleRanking();
-  } catch(e) {
-    console.error('배틀 로비 오류:', e);
-    showToast('오류가 발생했습니다: ' + e.message);
-  }
+  }catch(e){console.error('배틀 로비 오류:',e);showToast('오류: '+e.message);}
 }
 async function renderMyBattleProfile(){
   if(!G.uid||G.uid==='admin')return;
@@ -1788,32 +1797,105 @@ async function loadBattleRanking(){
     if(snap.empty){el.innerHTML='<div style="color:#666;text-align:center;padding:16px;">기록 없음</div>';return;}
     el.innerHTML='';
     snap.docs.forEach((doc,i)=>{
-      const d=doc.data();
-      if(!d.wins && d.wins!==0) return;
+      const d=doc.data();if(d.wins===undefined)return;
       const wr=calcWR(d.wins||0,d.draws||0,d.losses||0);
-      const row=document.createElement('div'); row.className='b-rank-row';
+      const row=document.createElement('div');row.className='b-rank-row';
       const nameEl=`<span class="b-rank-name" style="${doc.id!==G.uid?'cursor:pointer;text-decoration:underline dotted;':''}">${escapeHtml(d.nickname||'?')}</span>`;
       row.innerHTML=`<span class="b-rank-num">${i+1}</span>${nameEl}<span class="b-rank-record">${d.wins||0}승 ${d.draws||0}무 ${d.losses||0}패</span><span class="b-rank-wr">${wr}%</span>`;
       if(doc.id!==G.uid){
-        row.querySelector('.b-rank-name').addEventListener('click',e=>{
-          e.stopPropagation();openUserPopup(doc.id,d.nickname||'?',d);
-        });
+        row.querySelector('.b-rank-name').addEventListener('click',e=>{e.stopPropagation();openUserPopup(doc.id,d.nickname||'?',d);});
       }
       el.appendChild(row);
     });
   }catch(e){el.innerHTML='<div style="color:#f66;padding:12px;">오류: '+e.message+'</div>';}
 }
 
+/* ══════════════════════════════════════
+   방 코드 시스템
+══════════════════════════════════════ */
+function generateRoomCode(){
+  const chars='ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+  let code='';
+  for(let i=0;i<6;i++) code+=chars[Math.floor(Math.random()*chars.length)];
+  return code;
+}
+async function createRoom(){
+  if(!G.uid){showToast('로그인 필요');return;}
+  const code=generateRoomCode();
+  try{
+    const ref=await db.collection(COL_BATTLES).add({
+      p1Id:G.uid,p1Name:G.name,p2Id:'',p2Name:'',
+      roomCode:code,
+      p1Wins:0,p2Wins:0,draws:0,currentRound:1,
+      state:'waiting',
+      p1Floor:0,p2Floor:0,p1Done:false,p2Done:false,
+      roundDuration:60,
+      createdAt:firebase.firestore.FieldValue.serverTimestamp()
+    });
+    BATTLE._currentRoomId=ref.id;
+    document.getElementById('lobbyMainBtns').style.display='none';
+    document.getElementById('roomCreateBox').style.display='block';
+    document.getElementById('myRoomCode').textContent=code;
+    _roomWaitListener=db.collection(COL_BATTLES).doc(ref.id).onSnapshot(snap=>{
+      if(!snap.exists)return;
+      const d=snap.data();
+      if(d.p2Id&&d.state==='countdown'){
+        if(_roomWaitListener){_roomWaitListener();_roomWaitListener=null;}
+        joinBattle(ref.id,true);
+      }
+    });
+  }catch(e){showToast('방 생성 오류: '+e.message);}
+}
+async function cancelRoom(){
+  if(_roomWaitListener){_roomWaitListener();_roomWaitListener=null;}
+  if(BATTLE._currentRoomId){
+    await db.collection(COL_BATTLES).doc(BATTLE._currentRoomId).delete().catch(()=>{});
+    BATTLE._currentRoomId=null;
+  }
+  document.getElementById('lobbyMainBtns').style.display='flex';
+  document.getElementById('roomCreateBox').style.display='none';
+}
+function showJoinBox(){
+  document.getElementById('lobbyMainBtns').style.display='none';
+  document.getElementById('roomJoinBox').style.display='block';
+  document.getElementById('joinCodeInput').value='';
+  document.getElementById('joinRoomMsg').textContent='';
+  setTimeout(()=>document.getElementById('joinCodeInput').focus(),100);
+}
+function hideJoinBox(){
+  document.getElementById('lobbyMainBtns').style.display='flex';
+  document.getElementById('roomJoinBox').style.display='none';
+}
+async function confirmJoinRoom(){
+  const code=document.getElementById('joinCodeInput').value.trim().toUpperCase();
+  const msgEl=document.getElementById('joinRoomMsg');
+  if(code.length<4){msgEl.style.color='#ff6699';msgEl.textContent='코드를 입력해주세요';return;}
+  msgEl.style.color='#00c6ff';msgEl.textContent='🔍 방 찾는 중...';
+  try{
+    const snap=await db.collection(COL_BATTLES)
+      .where('roomCode','==',code)
+      .where('state','==','waiting')
+      .limit(1).get();
+    if(snap.empty){msgEl.style.color='#ff6699';msgEl.textContent='❌ 방을 찾을 수 없습니다';return;}
+    const doc=snap.docs[0];
+    const d=doc.data();
+    if(d.p1Id===G.uid){msgEl.style.color='#ff6699';msgEl.textContent='❌ 자신의 방에는 입장할 수 없습니다';return;}
+    await db.collection(COL_BATTLES).doc(doc.id).update({
+      p2Id:G.uid,p2Name:G.name,state:'countdown'
+    });
+    hideJoinBox();
+    joinBattle(doc.id,false);
+  }catch(e){msgEl.style.color='#ff6699';msgEl.textContent='오류: '+e.message;}
+}
+
 /* ── 유저 팝업 ── */
 async function openUserPopup(uid,name,dataCache){
   if(uid===G.uid)return;
-  POPUP_USER.targetId=uid; POPUP_USER.targetName=name;
+  POPUP_USER.targetId=uid;POPUP_USER.targetName=name;
   let data=dataCache;
   if(!data){
-    try{
-      const s=await db.collection('users').doc(uid).get();
-      data=s.exists?s.data():{};
-    }catch(e){data={};}
+    try{const s=await db.collection('users').doc(uid).get();data=s.exists?s.data():{};}
+    catch(e){data={};}
   }
   document.getElementById('bPopupName').textContent=name;
   document.getElementById('bPopupStats').innerHTML=statsText(data)+'<br>최고층: '+(data.bestScore||0)+'F';
@@ -1845,7 +1927,7 @@ async function popupChallenge(){
     if(d.status==='accepted'&&d.battleId){unsub();showToast('✅ 수락됨!');joinBattle(d.battleId,true);}
     else if(d.status==='declined'){unsub();showToast('❌ 거절됐습니다.');}
   });
-  setTimeout(()=>{unsub();},60000);
+  setTimeout(()=>unsub(),60000);
 }
 
 /* ── 소셜 초기화 ── */
@@ -1856,10 +1938,7 @@ function initSocialFeatures(){
     .where('status','==','pending')
     .onSnapshot(snap=>{
       snap.docChanges().forEach(ch=>{
-        if(ch.type==='added'){
-          const d=ch.doc.data();
-          showChallengePopup(ch.doc.id,d.fromName);
-        }
+        if(ch.type==='added'){const d=ch.doc.data();showChallengePopup(ch.doc.id,d.fromName);}
       });
     });
 }
@@ -1891,54 +1970,7 @@ async function declineChallenge(){
   _pendingChallengeId=null;
 }
 
-/* ── 랜덤 매칭 ── */
-async function findMatch(){
-  if(!G.uid){showToast('로그인 후 이용 가능합니다.');return;}
-  document.getElementById('findMatchBtn').style.display='none';
-  document.getElementById('cancelMatchBtn').style.display='block';
-  document.getElementById('matchStatus').textContent='🔍 상대를 찾는 중...';
-  const myRef=db.collection(COL_QUEUE).doc(G.uid);
-  await myRef.set({uid:G.uid,name:G.name,joinedAt:firebase.firestore.FieldValue.serverTimestamp()});
-  BATTLE.matchListener=db.collection(COL_QUEUE)
-    .where('uid','!=',G.uid)
-    .limit(1)
-    .onSnapshot(async snap=>{
-      if(snap.empty)return;
-      const opp=snap.docs[0].data();
-      if(G.uid<opp.uid){
-        const battleId=await createBattleRoom(G.uid,G.name,opp.uid,opp.name);
-        await myRef.delete();
-        await db.collection(COL_QUEUE).doc(opp.uid).delete().catch(()=>{});
-        cancelMatchListener();
-        joinBattle(battleId,true);
-      }else{
-        listenForMatchedBattle();
-      }
-    });
-}
-function listenForMatchedBattle(){
-  db.collection(COL_BATTLES)
-    .where('p2Id','==',G.uid)
-    .where('state','==','countdown')
-    .limit(1)
-    .onSnapshot(snap=>{
-      if(snap.empty)return;
-      const doc=snap.docs[0];
-      cancelMatchListener();
-      db.collection(COL_QUEUE).doc(G.uid).delete().catch(()=>{});
-      joinBattle(doc.id,false);
-    });
-}
-async function cancelMatch(){
-  cancelMatchListener();
-  await db.collection(COL_QUEUE).doc(G.uid).delete().catch(()=>{});
-  document.getElementById('findMatchBtn').style.display='block';
-  document.getElementById('cancelMatchBtn').style.display='none';
-  document.getElementById('matchStatus').textContent='';
-}
-function cancelMatchListener(){if(BATTLE.matchListener){BATTLE.matchListener();BATTLE.matchListener=null;}}
-
-/* ── 배틀 룸 생성 ── */
+/* ── 배틀 룸 생성 (대전신청용) ── */
 async function createBattleRoom(p1Id,p1Name,p2Id,p2Name){
   const ref=await db.collection(COL_BATTLES).add({
     p1Id,p1Name,p2Id,p2Name,
@@ -1953,10 +1985,10 @@ async function createBattleRoom(p1Id,p1Name,p2Id,p2Name){
 
 /* ── 배틀 입장 ── */
 async function joinBattle(battleId,isP1){
-  BATTLE.battleId=battleId; BATTLE.isP1=isP1;
-  BATTLE.myKey=isP1?'p1':'p2'; BATTLE.oppKey=isP1?'p2':'p1';
-  BATTLE._roundEndHandled=false; BATTLE._matchEndHandled=false;
-  BATTLE._oppDoneHandled=false; BATTLE.myWins=0; BATTLE.oppWins=0; BATTLE.draws=0;
+  BATTLE.battleId=battleId;BATTLE.isP1=isP1;
+  BATTLE.myKey=isP1?'p1':'p2';BATTLE.oppKey=isP1?'p2':'p1';
+  BATTLE._roundEndHandled=false;BATTLE._matchEndHandled=false;
+  BATTLE._oppDoneHandled=false;BATTLE.myWins=0;BATTLE.oppWins=0;BATTLE.draws=0;
   const snap=await db.collection(COL_BATTLES).doc(battleId).get();
   const d=snap.data();
   BATTLE.myName=isP1?d.p1Name:d.p2Name;
@@ -1964,7 +1996,7 @@ async function joinBattle(battleId,isP1){
   BATTLE.oppId=isP1?d.p2Id:d.p1Id;
   BATTLE.currentRound=d.currentRound||1;
   BATTLE.roundDuration=d.roundDuration||60;
-  listenBattleRoom(); listenBattleChat();
+  listenBattleRoom();listenBattleChat();
   showCountdown(d);
 }
 
@@ -1977,7 +2009,7 @@ function showCountdown(d){
   document.getElementById('cdScore').textContent=`${BATTLE.myWins}승 : ${BATTLE.oppWins}승  (${BATTLE.draws}무)`;
   let sec=10;
   const cdNumEl=document.getElementById('cdNum');
-  if(cdNumEl) cdNumEl.textContent=sec;
+  if(cdNumEl)cdNumEl.textContent=sec;
   clearInterval(BATTLE.cdInterval);
   BATTLE.cdInterval=setInterval(()=>{
     sec--;
@@ -1994,7 +2026,7 @@ function startBattleRound(){
   document.getElementById('bP2Name').textContent=BATTLE.isP1?BATTLE.oppName:BATTLE.myName;
   document.getElementById('opponentPaneLabel').textContent=BATTLE.oppName;
   document.getElementById('battleRoundDisplay').textContent=`Round ${BATTLE.currentRound}`;
-  updateBattleWinDots(); updateBattleFloorDisplay();
+  updateBattleWinDots();updateBattleFloorDisplay();
   initBattleGame();
   let timeLeft=BATTLE.roundDuration;
   updateBattleTimer(timeLeft);
@@ -2023,15 +2055,14 @@ function updateBattleFloorDisplay(){
   const p1F=BATTLE.isP1?BATTLE.myFloor:BATTLE.oppFloor;
   const p2F=BATTLE.isP1?BATTLE.oppFloor:BATTLE.myFloor;
   const e1=document.getElementById('bP1Floor'),e2=document.getElementById('bP2Floor');
-  if(e1)e1.textContent=p1F+'F'; if(e2)e2.textContent=p2F+'F';
+  if(e1)e1.textContent=p1F+'F';if(e2)e2.textContent=p2F+'F';
 }
 function syncMyFloor(floor){
   if(!BATTLE.battleId)return;
   db.collection(COL_BATTLES).doc(BATTLE.battleId).update({[`${BATTLE.myKey}Floor`]:floor}).catch(()=>{});
 }
 function updateOpponentViz(floor){
-  const viz=document.getElementById('opponentStackViz');
-  if(!viz)return;
+  const viz=document.getElementById('opponentStackViz');if(!viz)return;
   viz.innerHTML='';
   const show=Math.min(floor,14);
   for(let i=0;i<show;i++){
@@ -2055,28 +2086,23 @@ function listenBattleRoom(){
     if(oppFloor!==BATTLE.oppFloor){BATTLE.oppFloor=oppFloor;updateOpponentViz(oppFloor);updateBattleFloorDisplay();}
     if(d.state==='roundEnd'&&!BATTLE._roundEndHandled){
       BATTLE._roundEndHandled=true;
-      clearInterval(BATTLE.timerInterval);
-      clearInterval(BATTLE._floorWatcher);
+      clearInterval(BATTLE.timerInterval);clearInterval(BATTLE._floorWatcher);
       showRoundResult(d);
     }
     if(d.state==='matchEnd'&&!BATTLE._matchEndHandled){
-      BATTLE._matchEndHandled=true;
-      showMatchResult(d);
+      BATTLE._matchEndHandled=true;showMatchResult(d);
     }
   });
 }
 async function onRoundTimeUp(){
-  G.playing=false;stopMov();
-  clearInterval(BATTLE._floorWatcher);
+  G.playing=false;stopMov();clearInterval(BATTLE._floorWatcher);
   BATTLE.myFloor=G.level-1;
   await db.collection(COL_BATTLES).doc(BATTLE.battleId).update({
-    [`${BATTLE.myKey}Floor`]:BATTLE.myFloor,
-    [`${BATTLE.myKey}Done`]:true
+    [`${BATTLE.myKey}Floor`]:BATTLE.myFloor,[`${BATTLE.myKey}Done`]:true
   }).catch(()=>{});
-  if(BATTLE.isP1) await judgeRound();
+  if(BATTLE.isP1)await judgeRound();
 }
 async function judgeRound(){
-  /* P2도 완료될 때까지 대기 */
   const snap=await db.collection(COL_BATTLES).doc(BATTLE.battleId).get();
   const d=snap.data();
   if(!d.p1Done||!d.p2Done){setTimeout(judgeRound,600);return;}
@@ -2094,10 +2120,8 @@ async function judgeRound(){
 }
 function showRoundResult(d){
   stopMov();stopCam();
-  clearInterval(BATTLE.timerInterval);
-  clearInterval(BATTLE._floorWatcher);
-  restoreBattleGameArea();
-  showOnly('roundResultScreen');
+  clearInterval(BATTLE.timerInterval);clearInterval(BATTLE._floorWatcher);
+  restoreBattleGameArea();showOnly('roundResultScreen');
   BATTLE._roundEndHandled=false;
   const myF=d[`${BATTLE.myKey}Floor`]||0,oppF=d[`${BATTLE.oppKey}Floor`]||0;
   const rw=d.roundWinner;
@@ -2117,17 +2141,12 @@ function showRoundResult(d){
   const nextR=d.currentRound;
   document.getElementById('rrNextInfo').textContent=`Round ${nextR} 준비 중...`;
   BATTLE.currentRound=nextR;
-  setTimeout(()=>{
-    BATTLE._oppDoneHandled=false;
-    showCountdown(d);
-  },3500);
+  setTimeout(()=>{BATTLE._oppDoneHandled=false;showCountdown(d);},3500);
 }
 async function showMatchResult(d){
   stopMov();stopCam();
-  clearInterval(BATTLE.timerInterval);
-  clearInterval(BATTLE._floorWatcher);
-  restoreBattleGameArea();
-  showOnly('matchResultScreen');
+  clearInterval(BATTLE.timerInterval);clearInterval(BATTLE._floorWatcher);
+  restoreBattleGameArea();showOnly('matchResultScreen');
   if(BATTLE.battleListener){BATTLE.battleListener();BATTLE.battleListener=null;}
   if(BATTLE.chatListener){BATTLE.chatListener();BATTLE.chatListener=null;}
   const myW=BATTLE.isP1?d.p1Wins:d.p2Wins;
@@ -2146,15 +2165,11 @@ async function showMatchResult(d){
   BATTLE.battleId=null;
 }
 function cleanupBattle(){
-  clearInterval(BATTLE.timerInterval);
-  clearInterval(BATTLE.cdInterval);
-  clearInterval(BATTLE._floorWatcher);
+  clearInterval(BATTLE.timerInterval);clearInterval(BATTLE.cdInterval);clearInterval(BATTLE._floorWatcher);
   if(BATTLE.battleListener){BATTLE.battleListener();BATTLE.battleListener=null;}
   if(BATTLE.chatListener){BATTLE.chatListener();BATTLE.chatListener=null;}
-  cancelMatchListener();
-  BATTLE.battleId=null;
-  BATTLE._roundEndHandled=false;
-  BATTLE._matchEndHandled=false;
+  if(_roomWaitListener){_roomWaitListener();_roomWaitListener=null;}
+  BATTLE.battleId=null;BATTLE._roundEndHandled=false;BATTLE._matchEndHandled=false;
 }
 
 /* ── 배틀 채팅 ── */
@@ -2178,9 +2193,7 @@ function listenBattleChat(){
     .where('battleId','==',BATTLE.battleId)
     .orderBy('ts','asc')
     .onSnapshot(snap=>{
-      snap.docChanges().forEach(ch=>{
-        if(ch.type==='added')appendBattleChatMsg(ch.doc.data());
-      });
+      snap.docChanges().forEach(ch=>{if(ch.type==='added')appendBattleChatMsg(ch.doc.data());});
     });
 }
 function appendBattleChatMsg(d){
@@ -2190,14 +2203,11 @@ function appendBattleChatMsg(d){
     const div=document.createElement('div');
     div.className='b-chat-msg'+(isMine?' mine':'');
     div.innerHTML=`<span class="b-chat-name">${escapeHtml(d.name)}</span>${escapeHtml(d.text)}`;
-    container.appendChild(div);
-    container.scrollTop=container.scrollHeight;
+    container.appendChild(div);container.scrollTop=container.scrollHeight;
   });
 }
 
-/* ══════════════════════════════════════
-   배틀 DM
-══════════════════════════════════════ */
+/* ── 배틀 DM ── */
 function openBattleDMScreen(){
   showOnly('dmBattleScreen');
   document.getElementById('dmBTargetName').textContent=DM_BATTLE.targetName;
@@ -2223,8 +2233,7 @@ async function sendBattleDM(){
 }
 function appendBattleDMMsg(d){
   const isMine=d.fromId===G.uid;
-  const wrap=document.createElement('div');
-  wrap.className='bdm-msg '+(isMine?'mine':'theirs');
+  const wrap=document.createElement('div');wrap.className='bdm-msg '+(isMine?'mine':'theirs');
   const ts=d.ts?.toDate?d.ts.toDate():new Date();
   const tStr=ts.toLocaleTimeString('ko-KR',{hour:'2-digit',minute:'2-digit'});
   wrap.innerHTML=`<div class="bdm-bubble">${escapeHtml(d.text)}</div><div class="bdm-time">${tStr}</div>`;
@@ -2239,14 +2248,16 @@ function closeBattleDM(){
 /* ══════════════════════════════════════
    이벤트 리스너
 ══════════════════════════════════════ */
-const IGNORE=['chatInput','dmInput','loginId','loginPw','signupId','signupNick','signupPw','signupPw2','cdChatInput','ingameChatInput','dmBInput'];
-
+const IGNORE=['chatInput','dmInput','loginId','loginPw','signupId','signupNick',
+  'signupPw','signupPw2','cdChatInput','ingameChatInput','dmBInput',
+  'newNicknameInput','joinCodeInput'];
 document.addEventListener('mousedown',e=>{
   if(chatPanel.contains(e.target))return;
   if(document.getElementById('chatBtn').contains(e.target))return;
   if(document.querySelector('.confirm-overlay'))return;
   if(document.getElementById('namePopup'))return;
   if(document.getElementById('battleUserPopup')?.style.display==='block')return;
+  if(document.getElementById('nicknameModal').classList.contains('show'))return;
   if(G.started&&G.playing){e.preventDefault();judge();}
 },true);
 document.addEventListener('touchstart',e=>{
@@ -2255,12 +2266,13 @@ document.addEventListener('touchstart',e=>{
   if(document.querySelector('.confirm-overlay'))return;
   if(document.getElementById('namePopup'))return;
   if(document.getElementById('battleUserPopup')?.style.display==='block')return;
+  if(document.getElementById('nicknameModal').classList.contains('show'))return;
   if(G.started&&G.playing){e.preventDefault();judge();}
 },{passive:false,capture:true});
 document.addEventListener('keydown',e=>{
   if(IGNORE.includes(document.activeElement?.id))return;
   if((e.code==='Space'||e.key===' ')&&G.started&&G.playing){e.preventDefault();judge();}
-  if(e.key==='Escape'){closeNamePopup();closeUserPopup();}
+  if(e.key==='Escape'){closeNamePopup();closeUserPopup();closeNicknameModal();}
 },true);
 
 /* 게임 버튼 */
@@ -2273,9 +2285,15 @@ document.getElementById('btnHome').addEventListener('click',goHome);
 
 /* 대전 버튼 */
 document.getElementById('btnBattleLobby').addEventListener('click',openBattleLobby);
-document.getElementById('btnBackBattleLobby').addEventListener('click',goHome);
-document.getElementById('findMatchBtn').addEventListener('click',findMatch);
-document.getElementById('cancelMatchBtn').addEventListener('click',cancelMatch);
+document.getElementById('btnBackBattleLobby').addEventListener('click',()=>{cancelRoom();goHome();});
+
+/* 방 만들기/참여 */
+document.getElementById('createRoomBtn').addEventListener('click',createRoom);
+document.getElementById('joinRoomBtn').addEventListener('click',showJoinBox);
+document.getElementById('cancelRoomBtn').addEventListener('click',cancelRoom);
+document.getElementById('confirmJoinBtn').addEventListener('click',confirmJoinRoom);
+document.getElementById('cancelJoinBtn').addEventListener('click',hideJoinBox);
+document.getElementById('joinCodeInput').addEventListener('keypress',e=>{if(e.key==='Enter')confirmJoinRoom();});
 
 /* 배틀 채팅 */
 document.getElementById('cdChatSend').addEventListener('click',sendBattleChat);
@@ -2302,12 +2320,6 @@ document.getElementById('dmBInput').addEventListener('keypress',e=>{if(e.key==='
 document.getElementById('dmBBack').addEventListener('click',closeBattleDM);
 
 window.addEventListener('load',()=>{initFirebase();});
-window.addEventListener('resize',()=>{
-  if(!G.started)return;
-  G.cW=gc.offsetWidth;G.cH=gc.offsetHeight;
-  G.gameW=Math.min(G.cW,GAME_W);G.gameOff=Math.max(0,Math.floor((G.cW-G.gameW)/2));
-  updateGameArea();
-});
 </script>
 </body>
 </html>
