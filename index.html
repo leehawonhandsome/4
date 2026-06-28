@@ -418,6 +418,122 @@ body { display:flex; justify-content:center; align-items:center; }
   #chatBtn   { right:14px; bottom:16px; }
   .auth-box  { padding:24px 18px; }
 }
+/* ── 피드백 ── */
+#feedbackModal {
+  position:fixed; inset:0; background:rgba(0,0,0,0.82);
+  z-index:8500; display:none; align-items:center; justify-content:center; padding:20px;
+}
+#feedbackModal.show { display:flex; }
+.feedback-box {
+  background:linear-gradient(160deg,#0d1230,#1a1a2e);
+  border:2px solid rgba(255,0,255,0.35); border-radius:20px; padding:24px 20px;
+  width:100%; max-width:440px; max-height:85vh; overflow-y:auto;
+  box-shadow:0 0 40px rgba(255,0,255,0.15);
+  animation:noticeIn 0.3s cubic-bezier(0.34,1.56,0.64,1);
+}
+.feedback-header {
+  display:flex; align-items:center; justify-content:space-between;
+  margin-bottom:16px; padding-bottom:12px; border-bottom:1px solid rgba(255,0,255,0.2);
+}
+.feedback-header-title { font-size:1.05rem; font-weight:900; color:#ff00ff; }
+.feedback-close-btn { background:none; border:none; color:#aaa; font-size:1.2rem; cursor:pointer; }
+.feedback-textarea {
+  width:100%; padding:12px 14px; min-height:100px;
+  background:rgba(255,255,255,0.04); border:1.5px solid rgba(255,0,255,0.25);
+  border-radius:10px; color:#fff; font-size:0.88rem; line-height:1.6;
+  outline:none; resize:vertical; font-family:inherit; margin-bottom:10px;
+}
+.feedback-textarea:focus { border-color:#ff00ff; }
+.feedback-send-btn {
+  width:100%; padding:12px; font-size:0.92rem; font-weight:bold;
+  background:linear-gradient(90deg,#ff00ff,#ff0066); color:#fff;
+  border:none; border-radius:10px; cursor:pointer; transition:transform 0.15s; margin-bottom:20px;
+}
+.feedback-send-btn:active { transform:scale(0.97); }
+.feedback-send-btn:disabled { opacity:0.5; cursor:not-allowed; }
+.feedback-history-title {
+  font-size:0.78rem; color:#aaa; text-transform:uppercase;
+  letter-spacing:1px; margin-bottom:10px;
+}
+.feedback-item {
+  background:rgba(255,255,255,0.03); border:1px solid rgba(255,0,255,0.15);
+  border-radius:10px; padding:12px; margin-bottom:10px;
+}
+.feedback-item-text { color:#ddd; font-size:0.88rem; line-height:1.5; margin-bottom:5px; word-break:break-word; }
+.feedback-item-time { color:#444; font-size:0.7rem; margin-bottom:6px; }
+.feedback-reply {
+  background:rgba(0,255,255,0.06); border:1px solid rgba(0,255,255,0.2);
+  border-radius:8px; padding:10px; margin-top:8px;
+}
+.feedback-reply-label { font-size:0.72rem; color:#00ffff; font-weight:bold; margin-bottom:4px; }
+.feedback-reply-text { color:#ccc; font-size:0.85rem; line-height:1.5; word-break:break-word; }
+.feedback-reply-time { color:#444; font-size:0.7rem; margin-top:4px; }
+.feedback-no-reply { color:#555; font-size:0.8rem; font-style:italic; margin-top:8px; }
+.feedback-new-badge {
+  display:inline-block; padding:1px 7px; background:#ff00ff; color:#fff;
+  font-size:0.65rem; font-weight:bold; border-radius:10px; margin-left:6px; vertical-align:middle;
+}
+/* 피드백 버튼 배지 */
+#feedbackBtnBadge {
+  position:absolute; top:-5px; right:-5px; background:#ff00ff; color:#fff;
+  font-size:0.62rem; font-weight:bold; border-radius:50%; width:18px; height:18px;
+  display:none; align-items:center; justify-content:center;
+}
+/* 관리자 피드백 */
+.admin-feedback-item {
+  background:rgba(255,255,255,0.03); border:1px solid rgba(255,255,255,0.08);
+  border-radius:10px; padding:12px; margin-bottom:10px;
+}
+.admin-feedback-user { color:#ff00ff; font-weight:bold; font-size:0.82rem; margin-bottom:4px; }
+.admin-feedback-text { color:#ccc; font-size:0.88rem; line-height:1.5; margin-bottom:5px; word-break:break-word; }
+.admin-feedback-time { color:#444; font-size:0.7rem; margin-bottom:10px; }
+.admin-feedback-existing-reply {
+  background:rgba(0,255,255,0.06); border:1px solid rgba(0,255,255,0.15);
+  border-radius:8px; padding:8px 10px; margin-bottom:8px;
+  font-size:0.82rem; color:#aaa; white-space:pre-wrap; word-break:break-word;
+}
+.admin-reply-wrap { display:flex; gap:6px; align-items:flex-start; flex-direction:column; }
+.admin-reply-input {
+  width:100%; padding:9px 12px; font-size:0.85rem;
+  background:rgba(255,255,255,0.05); border:1px solid rgba(0,255,255,0.2);
+  border-radius:8px; color:#fff; outline:none; font-family:inherit;
+}
+.admin-reply-input:focus { border-color:#00ffff; }
+.admin-reply-btns { display:flex; gap:6px; }
+.admin-reply-btn {
+  padding:7px 16px; font-size:0.8rem; font-weight:bold;
+  background:linear-gradient(90deg,#00ffff,#0088ff); color:#000;
+  border:none; border-radius:7px; cursor:pointer;
+}
+/* 관리자 섹션 접기/펼치기 */
+.admin-section h3 {
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  user-select: none;
+}
+.admin-section h3::after {
+  content: '▲';
+  font-size: 0.72rem;
+  color: #aaa;
+  transition: transform 0.25s;
+  margin-left: 8px;
+  flex-shrink: 0;
+}
+.admin-section.collapsed h3::after {
+  transform: rotate(180deg);
+}
+.admin-section-body {
+  overflow: hidden;
+  max-height: 3000px;
+  transition: max-height 0.4s ease, opacity 0.3s ease;
+  opacity: 1;
+}
+.admin-section.collapsed .admin-section-body {
+  max-height: 0;
+  opacity: 0;
+}
 </style>
 </head>
 <body>
@@ -437,6 +553,22 @@ body { display:flex; justify-content:center; align-items:center; }
       <button class="notice-btn-close" onclick="dismissNotice(false)">닫기</button>
       <button class="notice-btn-dismiss" onclick="dismissNotice(true)">다시보지않기</button>
     </div>
+  </div>
+</div>
+
+<!-- 피드백 모달 -->
+<div id="feedbackModal">
+  <div class="feedback-box">
+    <div class="feedback-header">
+      <span class="feedback-header-title">📩 피드백 보내기</span>
+      <button class="feedback-close-btn" onclick="closeFeedbackModal()">✕</button>
+    </div>
+    <textarea id="feedbackInput" class="feedback-textarea"
+      placeholder="게임 의견, 버그 신고, 건의사항 등을 자유롭게 남겨주세요! 관리자가 확인 후 성의 있게 답변드립니다! 😊"
+      maxlength="500"></textarea>
+    <button class="feedback-send-btn" id="btnSendFeedback" onclick="sendFeedback()">📩 피드백 전송</button>
+    <div class="feedback-history-title">📋 내 피드백 내역</div>
+    <div id="myFeedbackList"><div class="rank-loading">불러오는 중...</div></div>
   </div>
 </div>
 
@@ -518,9 +650,7 @@ body { display:flex; justify-content:center; align-items:center; }
   <div>
     <div class="user-bar-name" id="userBarName"></div>
     <div style="font-size:0.72rem;color:#666;margin-top:2px;" id="userBarId"></div>
-    <!-- ✅ 이거 추가 -->
-    <div id="userBarScores" style="display:flex;gap:6px;flex-wrap:wrap;margin-top:6px;"></div>
-  </div>
+    </div>
   <div style="display:flex;gap:6px;align-items:center;">
     <button class="change-nick-btn" onclick="showNicknameModal()">✏️ 닉네임</button>
     <button class="logout-btn" onclick="doLogout()">로그아웃</button>
@@ -540,8 +670,13 @@ body { display:flex; justify-content:center; align-items:center; }
       </div>
     </div>
     <div class="modal-buttons" style="margin-bottom:22px;">
-      <button class="btn cyan" id="btnShowRanking">🏆 전체 랭킹</button>
-    </div>
+  <button class="btn cyan" id="btnShowRanking">🏆 전체 랭킹</button>
+  <button class="btn" id="btnFeedback"
+    style="background:linear-gradient(90deg,#ff00ff,#ff0066);color:#fff;position:relative;">
+    📩 피드백
+    <span id="feedbackBtnBadge"></span>
+  </button>
+</div>
     <div id="adminBtnRow" style="display:none;margin-bottom:16px;">
       <button class="btn admin" id="btnAdminPanel">⚙️ 관리자 패널</button>
     </div>
@@ -640,7 +775,14 @@ body { display:flex; justify-content:center; align-items:center; }
     </div>
     <div id="adminRankList"><div class="rank-loading">불러오는 중...</div></div>
   </div>
-
+<!-- 피드백 관리 -->
+<div class="admin-section" style="width:100%;max-width:480px;">
+  <h3 style="color:#ff00ff;">📩 피드백 관리</h3>
+  <div class="admin-action-row">
+    <button class="btn sm" id="btnRefreshFeedbacks" style="background:#333;color:#aaa;">🔄 새로고침</button>
+  </div>
+  <div id="adminFeedbackList"><div class="rank-loading">불러오는 중...</div></div>
+</div>
   <!-- 채팅 관리 -->
   <div class="admin-section" style="width:100%;max-width:480px;">
     <h3>💬 채팅 관리</h3>
@@ -815,24 +957,6 @@ function updateAdminNoticePreview(){
   }
 }
 
-async function loadMyBestScores(){
-  const el=document.getElementById('userBarScores');
-  if(!el)return;
-  if(!currentUser||currentUser.docId==='admin'){
-    el.innerHTML='';return;
-  }
-  try{
-    const uSnap=await db.collection('users').doc(currentUser.docId).get();
-    if(uSnap.exists){
-      const d=uSnap.data();
-      const hard=d.bestScoreHard||0;
-      const easy=d.bestScoreEasy||0;
-      el.innerHTML=
-        `<span style="font-size:0.7rem;background:rgba(255,65,108,0.15);border:1px solid rgba(255,65,108,0.45);color:#ff416c;padding:2px 8px;border-radius:12px;font-weight:bold;">🔴 HARD ${hard}F</span>`+
-        `<span style="font-size:0.7rem;background:rgba(0,255,136,0.1);border:1px solid rgba(0,255,136,0.38);color:#00ff88;padding:2px 8px;border-radius:12px;font-weight:bold;">🟢 EASY ${easy}F</span>`;
-    }
-  }catch(e){console.warn(e);}
-}
 function showNoticeIfNeeded(){
   if(!currentNotice||!currentNotice.text)return;
   const uid=G.uid||'guest';
@@ -1634,8 +1758,192 @@ async function afterLogin(){
   showOnly('nameModal');
   await loadNotice();
   showNoticeIfNeeded();
-  loadMyBestScores(); // ✅ 추가
 }
+/* ══════════════════════════════════════
+   피드백 시스템
+══════════════════════════════════════ */
+function openFeedbackModal(){
+  if(!currentUser){ showToast('로그인이 필요합니다'); return; }
+  document.getElementById('feedbackModal').classList.add('show');
+  document.getElementById('feedbackInput').value='';
+  loadMyFeedbacks();
+}
+function closeFeedbackModal(){
+  document.getElementById('feedbackModal').classList.remove('show');
+}
+
+async function sendFeedback(){
+  const text=document.getElementById('feedbackInput').value.trim();
+  if(!text){ showToast('내용을 입력해주세요'); return; }
+  if(!fbReady){ showToast('서버 연결 필요'); return; }
+  const btn=document.getElementById('btnSendFeedback');
+  btn.disabled=true; btn.textContent='⏳ 전송 중...';
+  try{
+    await db.collection('feedbacks').add({
+      userId:currentUser.docId,
+      userName:G.name,
+      text,
+      ts:firebase.firestore.FieldValue.serverTimestamp(),
+      reply:null,
+      replyTs:null,
+      replyRead:true
+    });
+    document.getElementById('feedbackInput').value='';
+    showToastMsg('✅ 피드백이 전송되었습니다!','#ff00ff');
+    loadMyFeedbacks();
+  }catch(e){ showToast('오류: '+e.message); }
+  btn.disabled=false; btn.textContent='📩 피드백 전송';
+}
+
+async function loadMyFeedbacks(){
+  const el=document.getElementById('myFeedbackList');
+  if(!el||!fbReady||!currentUser) return;
+  el.innerHTML='<div class="rank-loading">불러오는 중...</div>';
+  try{
+    const snap=await db.collection('feedbacks')
+      .where('userId','==',currentUser.docId)
+      .orderBy('ts','desc').limit(20).get();
+
+    // 읽음 처리
+    const bt=db.batch();
+    snap.forEach(doc=>{
+      if(doc.data().reply&&!doc.data().replyRead)
+        bt.update(doc.ref,{replyRead:true});
+    });
+    await bt.commit();
+    updateFeedbackBadge();
+
+    if(snap.empty){
+      el.innerHTML='<div style="color:#666;text-align:center;padding:20px;">아직 피드백이 없습니다<br><span style="font-size:1.5rem;">📭</span></div>';
+      return;
+    }
+    el.innerHTML='';
+    snap.forEach(doc=>{
+      const d=doc.data();
+      const ts=d.ts?new Date(d.ts.toMillis()).toLocaleString('ko-KR'):'';
+      const replyTs=d.replyTs?new Date(d.replyTs.toMillis()).toLocaleString('ko-KR'):'';
+      const replyHtml=d.reply
+        ?`<div class="feedback-reply">
+            <div class="feedback-reply-label">💬 관리자 답변</div>
+            <div class="feedback-reply-text">${escapeHtml(d.reply)}</div>
+            <div class="feedback-reply-time">${replyTs}</div>
+          </div>`
+        :`<div class="feedback-no-reply">⏳ 답변 대기 중...</div>`;
+      const item=document.createElement('div');
+      item.className='feedback-item';
+      item.innerHTML=
+        `<div class="feedback-item-text">${escapeHtml(d.text)}</div>`+
+        `<div class="feedback-item-time">${ts}</div>`+
+        replyHtml;
+      el.appendChild(item);
+    });
+  }catch(e){
+    el.innerHTML='<div style="color:#f66;padding:12px;">오류: '+escapeHtml(e.message)+'</div>';
+  }
+}
+
+async function updateFeedbackBadge(){
+  const badge=document.getElementById('feedbackBtnBadge');
+  if(!badge||!fbReady||!currentUser||currentUser.docId==='admin') return;
+  try{
+    const snap=await db.collection('feedbacks')
+      .where('userId','==',currentUser.docId)
+      .where('replyRead','==',false).get();
+    if(snap.size>0){
+      badge.style.display='flex';
+      badge.textContent=snap.size>9?'9+':snap.size;
+    }else{
+      badge.style.display='none';
+    }
+  }catch(e){}
+}
+
+/* 관리자용 */
+async function loadAdminFeedbacks(){
+  const el=document.getElementById('adminFeedbackList');
+  if(!el||!fbReady) return;
+  el.innerHTML='<div class="rank-loading">불러오는 중...</div>';
+  try{
+    const snap=await db.collection('feedbacks').orderBy('ts','desc').limit(50).get();
+    if(snap.empty){
+      el.innerHTML='<div style="color:#666;text-align:center;padding:16px;">피드백 없음</div>';
+      return;
+    }
+    el.innerHTML='';
+    snap.forEach(doc=>{
+      const d=doc.data();
+      const ts=d.ts?new Date(d.ts.toMillis()).toLocaleString('ko-KR'):'';
+      const replyTs=d.replyTs?new Date(d.replyTs.toMillis()).toLocaleString('ko-KR'):'';
+      const newBadge=(!d.replyRead&&d.reply===null)?'<span class="feedback-new-badge">NEW</span>':'';
+      const existingReply=d.reply
+        ?`<div class="admin-feedback-existing-reply">💬 기존 답변: ${escapeHtml(d.reply)}<br><span style="color:#444;font-size:0.7rem;">${replyTs}</span></div>`:'';
+      const item=document.createElement('div');
+      item.className='admin-feedback-item';
+      item.innerHTML=
+        `<div class="admin-feedback-user">👤 ${escapeHtml(d.userName)} ${newBadge}</div>`+
+        `<div class="admin-feedback-text">${escapeHtml(d.text)}</div>`+
+        `<div class="admin-feedback-time">${ts}</div>`+
+        existingReply+
+        `<div class="admin-reply-wrap">`+
+          `<input class="admin-reply-input" id="ri_${doc.id}" placeholder="답변 입력..." maxlength="300" value="${d.reply?escapeHtml(d.reply):''}">`+
+          `<div class="admin-reply-btns">`+
+            `<button class="admin-reply-btn" onclick="submitReply('${doc.id}')">💬 답변 등록</button>`+
+            `<button class="admin-del-btn" onclick="adminDeleteFeedback('${doc.id}')">🗑 삭제</button>`+
+          `</div>`+
+        `</div>`;
+      el.appendChild(item);
+    });
+  }catch(e){
+    el.innerHTML='<div style="color:#f66;padding:12px;">오류: '+escapeHtml(e.message)+'</div>';
+  }
+}
+
+async function submitReply(docId){
+  const input=document.getElementById('ri_'+docId);
+  if(!input) return;
+  const reply=input.value.trim();
+  if(!reply){ showToast('답변을 입력해주세요'); return; }
+  try{
+    await db.collection('feedbacks').doc(docId).update({
+      reply,
+      replyTs:firebase.firestore.FieldValue.serverTimestamp(),
+      replyRead:false
+    });
+    showToastMsg('✅ 답변 등록 완료','#00ffff');
+    loadAdminFeedbacks();
+  }catch(e){ showToast('오류: '+e.message); }
+}
+
+function adminDeleteFeedback(docId){
+  showConfirm('이 피드백을 삭제할까요?',async()=>{
+    await db.collection('feedbacks').doc(docId).delete();
+    loadAdminFeedbacks();
+    showToastMsg('🗑 피드백 삭제됨','#ff0066');
+  });
+}
+
+// 피드백 버튼 이벤트
+document.getElementById('btnFeedback').addEventListener('click', openFeedbackModal);
+document.getElementById('btnRefreshFeedbacks').addEventListener('click', loadAdminFeedbacks);
+
+/* ── 관리자 섹션 접기/펼치기 ── */
+document.querySelectorAll('.admin-section').forEach(section => {
+  const h3 = section.querySelector('h3');
+  if(!h3) return;
+
+  // h3 제외 나머지를 body div로 감싸기
+  const body = document.createElement('div');
+  body.className = 'admin-section-body';
+  while(h3.nextSibling){
+    body.appendChild(h3.nextSibling);
+  }
+  section.appendChild(body);
+
+  // 클릭 토글
+  h3.addEventListener('click', () => {
+    section.classList.toggle('collapsed');
+  });
+});
 </script>
 </body>
 </html>
