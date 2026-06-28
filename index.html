@@ -391,11 +391,10 @@ body { display:flex; justify-content:center; align-items:center; }
 @keyframes msgIn { from{opacity:0;transform:translateY(6px)} to{opacity:1;transform:translateY(0)} }
 .msg-name { font-size:0.72rem; color:#ff00ff; font-weight:bold; }
 .msg-name.me-name { color:#00ffff; }
-.msg-score-badge { font-size:0.65rem; color:#ffaa00; background:rgba(255,170,0,0.15); padding:1px 5px; border-radius:4px; }
-.msg-score-badge.hard-badge { color:#ff416c; background:rgba(255,65,108,0.18); border:1px solid rgba(255,65,108,0.35); }
-.msg-score-badge.easy-badge { color:#00ff88; background:rgba(0,255,136,0.13); border:1px solid rgba(0,255,136,0.35); }
-.msg-scores-wrap { display:inline-flex; gap:3px; flex-wrap:wrap; vertical-align:middle; }.msg-bubble { background:rgba(255,255,255,0.07); padding:7px 11px; border-radius:0 10px 10px 10px; font-size:0.85rem; line-height:1.4; word-break:break-word; max-width:85%; }
-.chat-msg.me .msg-bubble { background:rgba(0,255,255,0.12); border-radius:10px 0 10px 10px; }
+.msg-score-badge { font-size:0.65rem; padding:2px 6px; border-radius:5px; font-weight:bold; white-space:nowrap; }
+.msg-score-badge.hard-badge { color:#ff416c; background:rgba(255,65,108,0.18); border:1px solid rgba(255,65,108,0.4); }
+.msg-score-badge.easy-badge { color:#00ff88; background:rgba(0,255,136,0.13); border:1px solid rgba(0,255,136,0.4); }
+.msg-scores-wrap { display:inline-flex; gap:3px; flex-wrap:wrap; vertical-align:middle; margin-left:2px; }.chat-msg.me .msg-bubble { background:rgba(0,255,255,0.12); border-radius:10px 0 10px 10px; }
 .chat-msg.me { align-items:flex-end; }
 .chat-msg.system .msg-bubble { background:transparent; color:#555; font-size:0.75rem; font-style:italic; text-align:center; }
 .msg-footer { display:flex; align-items:center; gap:6px; margin-top:2px; }
@@ -680,6 +679,37 @@ body { display:flex; justify-content:center; align-items:center; }
 /* ══════════════════════════════════════
    CONFIG & GLOBALS
 ══════════════════════════════════════ */
+
+/* ── 실시간 랭킹 기반 점수+메달 뱃지 ── */
+function buildScoreBadgeHTML(name){
+  if(!name||name==='🎮 시스템'||name==='🏆 기록') return '';
+  const medals=['🥇','🥈','🥉'];
+  const hIdx=G_rankings_hard.findIndex(r=>r.name===name);
+  const eIdx=G_rankings_easy.findIndex(r=>r.name===name);
+  const sh=hIdx>=0?G_rankings_hard[hIdx].score:0;
+  const se=eIdx>=0?G_rankings_easy[eIdx].score:0;
+  let badges='';
+  if(sh>0){
+    const medal=hIdx<3?' '+medals[hIdx]:'';
+    badges+=`<span class="msg-score-badge hard-badge">🔴 ${sh}F${medal}</span>`;
+  }
+  if(se>0){
+    const medal=eIdx<3?' '+medals[eIdx]:'';
+    badges+=`<span class="msg-score-badge easy-badge">🟢 ${se}F${medal}</span>`;
+  }
+  return badges?`<span class="msg-scores-wrap">${badges}</span>`:'';
+}
+
+/* ── 랭킹 업데이트 시 채팅 뱃지 전체 갱신 ── */
+function refreshChatBadges(){
+  chatMessages.querySelectorAll('.chat-msg[data-sender]').forEach(el=>{
+    const name=el.dataset.sender;
+    const nameEl=el.querySelector('.msg-name');
+    if(!nameEl) return;
+    nameEl.innerHTML=escapeHtml(name)+' '+buildScoreBadgeHTML(name);
+  });
+}
+
 const FIREBASE_CONFIG = {
   apiKey:"AIzaSyAztxhe1Y01ZgLoEkn8UUDVybW9cabSjiI",
   authDomain:"hawonhandsome.firebaseapp.com",
@@ -1168,6 +1198,7 @@ function refreshRankingDisplays(){
     renderRanking('fullRankingList',50,currentRankTab);
   if(!document.getElementById('gameOverScreen').classList.contains('hidden'))
     renderRanking('gameoverRankingList',20,G.mode);
+  refreshChatBadges(); // ✅ 랭킹 바뀔 때마다 채팅 뱃지 갱신
 }
 async function saveScore(name,score,mode){
   if(!fbReady)return;
@@ -1239,14 +1270,13 @@ async function sendChat(){
   if(!text||!G.name||!fbReady)return;
   chatInput.value='';chatInput.disabled=true;
   try{
-    const msHard=getCurrentRankings('hard').find(r=>r.name===G.name);
-    const msEasy=getCurrentRankings('easy').find(r=>r.name===G.name);
+    const hIdx=G_rankings_hard.findIndex(r=>r.name===G.name);
+    const eIdx=G_rankings_easy.findIndex(r=>r.name===G.name);
     await db.collection('chats').add({
-      name:G.name,
-      text,
-      score:msHard?msHard.score:0,          // 하위호환 유지
-      scoreHard:msHard?msHard.score:0,
-      scoreEasy:msEasy?msEasy.score:0,
+      name:G.name,text,
+      score:hIdx>=0?G_rankings_hard[hIdx].score:0,        // 하위호환
+      scoreHard:hIdx>=0?G_rankings_hard[hIdx].score:0,
+      scoreEasy:eIdx>=0?G_rankings_easy[eIdx].score:0,
       ts:firebase.firestore.FieldValue.serverTimestamp()
     });
   }catch(e){console.warn(e);}
@@ -1264,42 +1294,38 @@ function startChatListener(){
   },err=>console.warn(err));
 }
 function appendGlobalMsg(d){
-  const{id,name,text,score,scoreHard,scoreEasy,ts}=d;
+  const{id,name,text,ts}=d;
   if(document.getElementById('msg-'+id))return;
-  const isMe=name===G.name,isSys=name==='🎮 시스템'||name==='🏆 기록';
-  const timeStr=ts?new Date(ts.toMillis()).toLocaleTimeString('ko-KR',{hour:'2-digit',minute:'2-digit'}):'';
-
-  /* ── 점수 뱃지 ── */
-  let scoreStr='';
-  const sh=scoreHard||0, se=scoreEasy||0;
-  if(sh>0||se>0){
-    // 새 포맷: 하드·이지 둘 다 표시
-    let badges='';
-    if(sh>0) badges+=`<span class="msg-score-badge hard-badge">🔴${sh}F</span>`;
-    if(se>0) badges+=`<span class="msg-score-badge easy-badge">🟢${se}F</span>`;
-    scoreStr=`<span class="msg-scores-wrap">${badges}</span>`;
-  } else if(score>0){
-    // 구버전 메시지 하위호환
-    scoreStr=`<span class="msg-score-badge">🏆${score}F</span>`;
-  }
+  const isMe=name===G.name;
+  const isSys=name==='🎮 시스템'||name==='🏆 기록';
+  const timeStr=ts
+    ?new Date(ts.toMillis()).toLocaleTimeString('ko-KR',{hour:'2-digit',minute:'2-digit'}):'';
 
   const div=document.createElement('div');
   div.id='msg-'+id;
   div.className='chat-msg'+(isMe?' me':'')+(isSys?' system':'');
+  if(!isSys) div.dataset.sender=name; // ✅ 뱃지 갱신용
 
   if(isSys){
     div.innerHTML=`<span class="msg-bubble">${escapeHtml(text)}</span>`;
   }else{
+    const badgeHTML=buildScoreBadgeHTML(name); // ✅ 실시간 랭킹 조회
     const del=(isMe||isAdmin)
       ?`<button class="msg-del" onclick="deleteMsgConfirm('${id}')">🗑</button>`:'';
     div.innerHTML=
-      `<span class="msg-name ${isMe?'me-name':''}">${escapeHtml(name)} ${scoreStr}</span>`+
+      `<span class="msg-name ${isMe?'me-name':''}">`+
+        `${escapeHtml(name)} ${badgeHTML}`+
+      `</span>`+
       `<span class="msg-bubble">${escapeHtml(text)}</span>`+
-      `<div class="msg-footer"><span class="msg-time">${timeStr}</span>${del}</div>`;
+      `<div class="msg-footer">`+
+        `<span class="msg-time">${timeStr}</span>${del}`+
+      `</div>`;
   }
 
   chatMessages.appendChild(div);
-  while(chatMessages.children.length>100)chatMessages.removeChild(chatMessages.firstChild);
+  while(chatMessages.children.length>100)
+    chatMessages.removeChild(chatMessages.firstChild);
+
   if(chatOpen) chatMessages.scrollTop=chatMessages.scrollHeight;
   else if(!isMe&&!isSys){
     unreadCount++;
