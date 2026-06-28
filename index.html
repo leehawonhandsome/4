@@ -392,7 +392,9 @@ body { display:flex; justify-content:center; align-items:center; }
 .msg-name { font-size:0.72rem; color:#ff00ff; font-weight:bold; }
 .msg-name.me-name { color:#00ffff; }
 .msg-score-badge { font-size:0.65rem; color:#ffaa00; background:rgba(255,170,0,0.15); padding:1px 5px; border-radius:4px; }
-.msg-bubble { background:rgba(255,255,255,0.07); padding:7px 11px; border-radius:0 10px 10px 10px; font-size:0.85rem; line-height:1.4; word-break:break-word; max-width:85%; }
+.msg-score-badge.hard-badge { color:#ff416c; background:rgba(255,65,108,0.18); border:1px solid rgba(255,65,108,0.35); }
+.msg-score-badge.easy-badge { color:#00ff88; background:rgba(0,255,136,0.13); border:1px solid rgba(0,255,136,0.35); }
+.msg-scores-wrap { display:inline-flex; gap:3px; flex-wrap:wrap; vertical-align:middle; }.msg-bubble { background:rgba(255,255,255,0.07); padding:7px 11px; border-radius:0 10px 10px 10px; font-size:0.85rem; line-height:1.4; word-break:break-word; max-width:85%; }
 .chat-msg.me .msg-bubble { background:rgba(0,255,255,0.12); border-radius:10px 0 10px 10px; }
 .chat-msg.me { align-items:flex-end; }
 .chat-msg.system .msg-bubble { background:transparent; color:#555; font-size:0.75rem; font-style:italic; text-align:center; }
@@ -514,15 +516,17 @@ body { display:flex; justify-content:center; align-items:center; }
       <span id="connText">연결 중...</span>
     </div>
     <div class="user-bar">
-      <div>
-        <div class="user-bar-name" id="userBarName"></div>
-        <div style="font-size:0.72rem;color:#666;margin-top:2px;" id="userBarId"></div>
-      </div>
-      <div style="display:flex;gap:6px;align-items:center;">
-        <button class="change-nick-btn" onclick="showNicknameModal()">✏️ 닉네임</button>
-        <button class="logout-btn" onclick="doLogout()">로그아웃</button>
-      </div>
-    </div>
+  <div>
+    <div class="user-bar-name" id="userBarName"></div>
+    <div style="font-size:0.72rem;color:#666;margin-top:2px;" id="userBarId"></div>
+    <!-- ✅ 이거 추가 -->
+    <div id="userBarScores" style="display:flex;gap:6px;flex-wrap:wrap;margin-top:6px;"></div>
+  </div>
+  <div style="display:flex;gap:6px;align-items:center;">
+    <button class="change-nick-btn" onclick="showNicknameModal()">✏️ 닉네임</button>
+    <button class="logout-btn" onclick="doLogout()">로그아웃</button>
+  </div>
+</div>
     <p style="margin-bottom:12px;">🎮 난이도를 선택하세요!</p>
     <div class="mode-cards">
       <div class="mode-card easy" onclick="startGame('easy')">
@@ -781,6 +785,24 @@ function updateAdminNoticePreview(){
   }
 }
 
+async function loadMyBestScores(){
+  const el=document.getElementById('userBarScores');
+  if(!el)return;
+  if(!currentUser||currentUser.docId==='admin'){
+    el.innerHTML='';return;
+  }
+  try{
+    const uSnap=await db.collection('users').doc(currentUser.docId).get();
+    if(uSnap.exists){
+      const d=uSnap.data();
+      const hard=d.bestScoreHard||0;
+      const easy=d.bestScoreEasy||0;
+      el.innerHTML=
+        `<span style="font-size:0.7rem;background:rgba(255,65,108,0.15);border:1px solid rgba(255,65,108,0.45);color:#ff416c;padding:2px 8px;border-radius:12px;font-weight:bold;">🔴 HARD ${hard}F</span>`+
+        `<span style="font-size:0.7rem;background:rgba(0,255,136,0.1);border:1px solid rgba(0,255,136,0.38);color:#00ff88;padding:2px 8px;border-radius:12px;font-weight:bold;">🟢 EASY ${easy}F</span>`;
+    }
+  }catch(e){console.warn(e);}
+}
 function showNoticeIfNeeded(){
   if(!currentNotice||!currentNotice.text)return;
   const uid=G.uid||'guest';
@@ -1217,8 +1239,16 @@ async function sendChat(){
   if(!text||!G.name||!fbReady)return;
   chatInput.value='';chatInput.disabled=true;
   try{
-    const ms=getCurrentRankings(G.mode).find(r=>r.name===G.name)||getCurrentRankings('hard').find(r=>r.name===G.name);
-    await db.collection('chats').add({name:G.name,text,score:ms?ms.score:0,ts:firebase.firestore.FieldValue.serverTimestamp()});
+    const msHard=getCurrentRankings('hard').find(r=>r.name===G.name);
+    const msEasy=getCurrentRankings('easy').find(r=>r.name===G.name);
+    await db.collection('chats').add({
+      name:G.name,
+      text,
+      score:msHard?msHard.score:0,          // 하위호환 유지
+      scoreHard:msHard?msHard.score:0,
+      scoreEasy:msEasy?msEasy.score:0,
+      ts:firebase.firestore.FieldValue.serverTimestamp()
+    });
   }catch(e){console.warn(e);}
   chatInput.disabled=false;chatInput.focus();
 }
@@ -1234,22 +1264,48 @@ function startChatListener(){
   },err=>console.warn(err));
 }
 function appendGlobalMsg(d){
-  const{id,name,text,score,ts}=d;
+  const{id,name,text,score,scoreHard,scoreEasy,ts}=d;
   if(document.getElementById('msg-'+id))return;
   const isMe=name===G.name,isSys=name==='🎮 시스템'||name==='🏆 기록';
   const timeStr=ts?new Date(ts.toMillis()).toLocaleTimeString('ko-KR',{hour:'2-digit',minute:'2-digit'}):'';
-  const scoreStr=score>0?`<span class="msg-score-badge">🏆${score}F</span>`:'';
-  const div=document.createElement('div');
-  div.id='msg-'+id;div.className='chat-msg'+(isMe?' me':'')+(isSys?' system':'');
-  if(isSys){div.innerHTML=`<span class="msg-bubble">${escapeHtml(text)}</span>`;}
-  else{
-    const del=(isMe||isAdmin)?`<button class="msg-del" onclick="deleteMsgConfirm('${id}')">🗑</button>`:'';
-    div.innerHTML=`<span class="msg-name ${isMe?'me-name':''}">${escapeHtml(name)} ${scoreStr}</span><span class="msg-bubble">${escapeHtml(text)}</span><div class="msg-footer"><span class="msg-time">${timeStr}</span>${del}</div>`;
+
+  /* ── 점수 뱃지 ── */
+  let scoreStr='';
+  const sh=scoreHard||0, se=scoreEasy||0;
+  if(sh>0||se>0){
+    // 새 포맷: 하드·이지 둘 다 표시
+    let badges='';
+    if(sh>0) badges+=`<span class="msg-score-badge hard-badge">🔴${sh}F</span>`;
+    if(se>0) badges+=`<span class="msg-score-badge easy-badge">🟢${se}F</span>`;
+    scoreStr=`<span class="msg-scores-wrap">${badges}</span>`;
+  } else if(score>0){
+    // 구버전 메시지 하위호환
+    scoreStr=`<span class="msg-score-badge">🏆${score}F</span>`;
   }
+
+  const div=document.createElement('div');
+  div.id='msg-'+id;
+  div.className='chat-msg'+(isMe?' me':'')+(isSys?' system':'');
+
+  if(isSys){
+    div.innerHTML=`<span class="msg-bubble">${escapeHtml(text)}</span>`;
+  }else{
+    const del=(isMe||isAdmin)
+      ?`<button class="msg-del" onclick="deleteMsgConfirm('${id}')">🗑</button>`:'';
+    div.innerHTML=
+      `<span class="msg-name ${isMe?'me-name':''}">${escapeHtml(name)} ${scoreStr}</span>`+
+      `<span class="msg-bubble">${escapeHtml(text)}</span>`+
+      `<div class="msg-footer"><span class="msg-time">${timeStr}</span>${del}</div>`;
+  }
+
   chatMessages.appendChild(div);
   while(chatMessages.children.length>100)chatMessages.removeChild(chatMessages.firstChild);
-  if(chatOpen)chatMessages.scrollTop=chatMessages.scrollHeight;
-  else if(!isMe&&!isSys){unreadCount++;chatBadge.style.display='flex';chatBadge.textContent=unreadCount>9?'9+':unreadCount;}
+  if(chatOpen) chatMessages.scrollTop=chatMessages.scrollHeight;
+  else if(!isMe&&!isSys){
+    unreadCount++;
+    chatBadge.style.display='flex';
+    chatBadge.textContent=unreadCount>9?'9+':unreadCount;
+  }
 }
 function deleteMsgConfirm(docId){
   showConfirm('이 메시지를 삭제할까요?',async()=>{
@@ -1536,6 +1592,24 @@ document.getElementById('btnRestart').addEventListener('click',()=>{
 document.getElementById('btnHome').addEventListener('click',goHome);
 
 window.addEventListener('load',()=>{ initFirebase(); });
+
+async function afterLogin(){
+  G.name=currentUser.nickname; G.uid=currentUser.docId;
+  document.getElementById('userBarId').textContent='ID: '+currentUser.id;
+  if(isAdmin){
+    document.getElementById('userBarName').innerHTML=
+      '👤 '+escapeHtml(currentUser.nickname)+
+      ' <span style="font-size:0.7rem;color:#ff00ff;background:rgba(255,0,255,0.15);padding:2px 6px;border-radius:4px;">관리자</span>';
+    document.getElementById('adminBtnRow').style.display='block';
+  }else{
+    document.getElementById('userBarName').textContent='👤 '+currentUser.nickname;
+  }
+  document.getElementById('playerInfo').textContent='👤 '+currentUser.nickname;
+  showOnly('nameModal');
+  await loadNotice();
+  showNoticeIfNeeded();
+  loadMyBestScores(); // ✅ 추가
+}
 </script>
 </body>
 </html>
