@@ -1640,33 +1640,49 @@ function spawnDebris(cur,cutted){
   if(cur.left+cur.width>cutted.left+cutted.width)makeP(cutted.left+cutted.width,1);
 }
 async function triggerGameOver(){
-  G.playing=false;G.started=false;stopMov();stopCam();
-  const score=G.level-1;
-  const existing=getCurrentRankings(G.mode).find(r=>r.name===G.name);
-  const isNewRecord=!existing||score>existing.score;
-  await saveScore(G.name,score,G.mode);
-  if(fbReady&&isNewRecord&&score>=10){
-    const modeStr=G.mode==='easy'?'🟢 이지':'🔴 하드';
-    db.collection('chats').add({name:'🏆 기록',text:`${G.name} 님이 ${modeStr} 모드 ${score}F 신기록 달성! ${score>=50?'🔥 대단해요!':score>=30?'👏 잘했어요!':''}`,score:0,ts:firebase.firestore.FieldValue.serverTimestamp()}).catch(()=>{});
+  G.playing=false; G.started=false; stopMov(); stopCam();
+  const score = G.level - 1;
+  
+  const existing = getCurrentRankings(G.mode).find(r=>r.name===G.name);
+  const isNewRecord = !existing || score > existing.score;
+  
+  saveScore(G.name, score, G.mode).then(()=>{
+    renderRanking('gameoverRankingList', 20, G.mode);
+    const myRankEl = document.getElementById('myRankBadge');
+    const myRank2 = getMyRank(G.name, G.mode);
+    if(myRank2){ myRankEl.style.display='block'; myRankEl.textContent=`🎯 현재 내 순위: ${myRank2}위`; }
+  });
+  
+  if(fbReady && isNewRecord && score >= 10){
+    const modeStr = G.mode==='easy' ? '🟢 이지' : '🔴 하드';
+    db.collection('chats').add({
+      name:'🏆 기록',
+      text:`${G.name} 님이 ${modeStr} 모드 ${score}F 신기록 달성! ${score>=50?'🔥 대단해요!':score>=30?'👏 잘했어요!':''}`,
+      score:0, ts:firebase.firestore.FieldValue.serverTimestamp()
+    }).catch(()=>{});
   }
+  
   setTimeout(()=>{
     showOnly('gameOverScreen');
-    document.getElementById('finalScore').textContent=score;
-    const modeBadge=document.getElementById('gameOverModeBadge');
-    modeBadge.className='mode-badge '+(G.mode==='easy'?'easy':'hard');
-    modeBadge.textContent=G.mode==='easy'?'🟢 EASY MODE':'🔴 HARD MODE';
-    document.getElementById('gameoverRankTitle').textContent=
-      G.mode==='easy'?'🏆 이지 모드 랭킹':'🏆 하드 모드 랭킹';
-    const best=getCurrentRankings(G.mode).find(r=>r.name===G.name);
-    const badge=document.getElementById('recordBadge');
-    if(!best||score>=best.score){badge.className='badge new';badge.textContent='🎉 새로운 최고 기록!';}
-    else{badge.className='badge old';badge.textContent=`💪 내 최고기록: ${best.score}F`;}
-    const myRankEl=document.getElementById('myRankBadge'),myRank=getMyRank(G.name,G.mode);
-    if(myRank){myRankEl.style.display='block';myRankEl.textContent=`🎯 현재 내 순위: ${myRank}위`;}
+    document.getElementById('finalScore').textContent = score;
+    const modeBadge = document.getElementById('gameOverModeBadge');
+    modeBadge.className = 'mode-badge ' + (G.mode==='easy'?'easy':'hard');
+    modeBadge.textContent = G.mode==='easy' ? '🟢 EASY MODE' : '🔴 HARD MODE';
+    document.getElementById('gameoverRankTitle').textContent =
+      G.mode==='easy' ? '🏆 이지 모드 랭킹' : '🏆 하드 모드 랭킹';
+    const badge = document.getElementById('recordBadge');
+    if(!existing || score >= existing.score){
+      badge.className='badge new'; badge.textContent='🎉 새로운 최고 기록!';
+    }else{
+      badge.className='badge old'; badge.textContent=`💪 내 최고기록: ${existing.score}F`;
+    }
+    const myRankEl = document.getElementById('myRankBadge');
+    const myRank = getMyRank(G.name, G.mode);
+    if(myRank){ myRankEl.style.display='block'; myRankEl.textContent=`🎯 현재 내 순위: ${myRank}위`; }
     else myRankEl.style.display='none';
-    renderRanking('gameoverRankingList',20,G.mode);
-  },1800);
-}
+    renderRanking('gameoverRankingList', 20, G.mode);
+  }, 500);
+}  // ← 여기서 끝!
 function showJudgment(text,type){const j=document.createElement('div');j.className=`judgment ${type}`;j.textContent=text;document.body.appendChild(j);setTimeout(()=>j.remove(),750);}
 function flashScreen(color){const f=document.createElement('div');f.className='flash';f.style.background=color;document.body.appendChild(f);setTimeout(()=>f.remove(),250);}
 
