@@ -534,6 +534,88 @@ body { display:flex; justify-content:center; align-items:center; }
   max-height: 0;
   opacity: 0;
 }
+/* ===== 답장 기능 ===== */
+.reply-preview {
+  display: none;
+  background: rgba(255,255,255,0.08);
+  border-left: 3px solid #4af;
+  padding: 6px 10px;
+  margin: 4px 8px 0;
+  border-radius: 8px;
+  font-size: 12px;
+  color: #8cf;
+  align-items: center;
+  gap: 6px;
+}
+.reply-preview.active { display: flex; }
+.reply-preview .rp-text {
+  flex: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.reply-preview .rp-cancel {
+  cursor: pointer;
+  font-size: 16px;
+  color: #fff;
+  padding: 0 4px;
+  flex-shrink: 0;
+}
+
+.msg-reply-quote {
+  background: rgba(100,180,255,0.1);
+  border-left: 3px solid #4af;
+  padding: 3px 8px;
+  border-radius: 4px;
+  font-size: 11px;
+  color: #8cf;
+  margin-bottom: 4px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  max-width: 200px;
+}
+
+.msg-reply-btn {
+  background: none;
+  border: none;
+  color: #89c;
+  cursor: pointer;
+  font-size: 13px;
+  padding: 2px 6px;
+  opacity: 0;
+  transition: opacity 0.2s;
+  float: right;
+  margin-top: -2px;
+}
+.chat-msg:hover .msg-reply-btn { opacity: 1; }
+/* ===== 설정 토글 스위치 ===== */
+.setting-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 10px 0;
+  border-bottom: 1px solid rgba(255,255,255,0.1);
+  font-size: 14px;
+  color: #ddd;
+}
+.toggle-sw { position: relative; display: inline-block; width: 46px; height: 26px; }
+.toggle-sw input { opacity: 0; width: 0; height: 0; }
+.toggle-sw .slider {
+  position: absolute; inset: 0;
+  background: #555; border-radius: 26px;
+  transition: 0.3s; cursor: pointer;
+}
+.toggle-sw .slider:before {
+  content: '';
+  position: absolute;
+  width: 20px; height: 20px;
+  left: 3px; bottom: 3px;
+  background: white; border-radius: 50%;
+  transition: 0.3s;
+}
+.toggle-sw input:checked + .slider { background: #4af; }
+.toggle-sw input:checked + .slider:before { transform: translateX(20px); }
 </style>
 </head>
 <body>
@@ -571,6 +653,7 @@ body { display:flex; justify-content:center; align-items:center; }
     <div id="myFeedbackList"><div class="rank-loading">불러오는 중...</div></div>
   </div>
 </div>
+
 
 <!-- 닉네임 변경 모달 -->
 <div id="nicknameModal">
@@ -657,6 +740,15 @@ body { display:flex; justify-content:center; align-items:center; }
   </div>
 </div>
     <p style="margin-bottom:12px;">🎮 난이도를 선택하세요!</p>
+    <div style="width:100%;display:flex;justify-content:space-between;align-items:center;
+  background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.1);
+  border-radius:10px;padding:8px 14px;margin-bottom:12px;font-size:13px;color:#ddd;">
+  <span>⚡ 반짝이 효과</span>
+  <label class="toggle-sw">
+    <input type="checkbox" id="flashToggle" onchange="saveFlashSetting(this)">
+    <span class="slider"></span>
+  </label>
+</div>
     <div class="mode-cards">
       <div class="mode-card easy" onclick="startGame('easy')">
         <span class="mode-card-icon">🟢</span>
@@ -792,15 +884,15 @@ body { display:flex; justify-content:center; align-items:center; }
     <div id="adminChatList" style="max-height:200px;overflow-y:auto;"><div class="rank-loading">불러오는 중...</div></div>
   </div>
 
-  <!-- 회원 관리 -->
+<!-- 회원 관리 -->
   <div class="admin-section" style="width:100%;max-width:480px;">
-    <h3>👤 회원 관리</h3>
-    <div id="adminUserList"><div class="rank-loading">불러오는 중...</div></div>
-  </div>
-
-  <div style="width:100%;max-width:480px;margin-bottom:30px;">
-    <button class="btn" id="btnAdminBack" style="width:100%;">← 돌아가기</button>
-  </div>
+<h3>👤 회원 관리</h3>
+<div id="adminUserList"><div class="rank-loading">불러오는 중...</div></div>
+</div>
+  
+<div style="width:100%;max-width:480px;margin-bottom:30px;">
+<button class="btn" id="btnAdminBack" style="width:100%;">← 돌아가기</button>
+</div>
 </div>
 
 <!-- 채팅 버튼 & 패널 -->
@@ -811,6 +903,10 @@ body { display:flex; justify-content:center; align-items:center; }
     <button id="chatClose">✕</button>
   </div>
   <div id="chatMessages"></div>
+  <div class="reply-preview" id="replyPreview">
+    <span class="rp-text" id="replyPreviewText"></span>
+    <span class="rp-cancel" onclick="cancelReply()">✕</span>
+  </div>
   <div class="chat-input-row">
     <input type="text" id="chatInput" placeholder="메시지 입력..." maxlength="80" autocomplete="off">
     <button id="chatSend">전송</button>
@@ -1396,16 +1492,29 @@ async function sendChat(){
   try{
     const hIdx=G_rankings_hard.findIndex(r=>r.name===G.name);
     const eIdx=G_rankings_easy.findIndex(r=>r.name===G.name);
-    await db.collection('chats').add({
-      name:G.name,text,
-      score:hIdx>=0?G_rankings_hard[hIdx].score:0,        // 하위호환
+
+    // ✅ 기본 메시지 데이터
+    const msgData = {
+      name:G.name, text,
+      score:hIdx>=0?G_rankings_hard[hIdx].score:0,
       scoreHard:hIdx>=0?G_rankings_hard[hIdx].score:0,
       scoreEasy:eIdx>=0?G_rankings_easy[eIdx].score:0,
       ts:firebase.firestore.FieldValue.serverTimestamp()
-    });
+    };
+
+    // ✅ 답장이 있으면 replyTo 추가
+    if(replyTo){
+      msgData.replyTo = { name: replyTo.name, text: replyTo.text };
+    }
+
+    await db.collection('chats').add(msgData);
+
   }catch(e){console.warn(e);}
+
+  cancelReply(); // ✅ 전송 후 답장 초기화
   chatInput.disabled=false;chatInput.focus();
 }
+
 document.getElementById('chatSend').addEventListener('click',sendChat);
 chatInput.addEventListener('keypress',e=>{if(e.key==='Enter')sendChat();});
 function startChatListener(){
@@ -1418,7 +1527,7 @@ function startChatListener(){
   },err=>console.warn(err));
 }
 function appendGlobalMsg(d){
-  const{id,name,text,ts}=d;
+  const{id,name,text,ts,replyTo:rt}=d;
   if(document.getElementById('msg-'+id))return;
   const isMe=name===G.name;
   const isSys=name==='🎮 시스템'||name==='🏆 기록';
@@ -1433,17 +1542,31 @@ function appendGlobalMsg(d){
   if(isSys){
     div.innerHTML=`<span class="msg-bubble">${escapeHtml(text)}</span>`;
   }else{
-    const badgeHTML=buildScoreBadgeHTML(name); // ✅ 실시간 랭킹 조회
-    const del=(isMe||isAdmin)
-      ?`<button class="msg-del" onclick="deleteMsgConfirm('${id}')">🗑</button>`:'';
-    div.innerHTML=
-      `<span class="msg-name ${isMe?'me-name':''}">`+
-        `${escapeHtml(name)} ${badgeHTML}`+
-      `</span>`+
-      `<span class="msg-bubble">${escapeHtml(text)}</span>`+
-      `<div class="msg-footer">`+
-        `<span class="msg-time">${timeStr}</span>${del}`+
-      `</div>`;
+    const badgeHTML=buildScoreBadgeHTML(name);
+const del=(isMe||isAdmin)
+?`<button class="msg-del" onclick="deleteMsgConfirm('${id}')">🗑</button>`:'';
+
+// ✅ 답장 인용 표시
+const replyHTML=rt
+?`<div class="msg-reply-quote">↩ <b>${escapeHtml(rt.name)}</b>: ${escapeHtml(rt.text)}</div>`
+:'';
+
+div.innerHTML=
+`<span class="msg-name ${isMe?'me-name':''}">`+
+`${escapeHtml(name)} ${badgeHTML}`+
+`</span>`+
+replyHTML+
+`<span class="msg-bubble">${escapeHtml(text)}</span>`+
+`<div class="msg-footer">`+
+`<span class="msg-time">${timeStr}</span>`+
+`<button class="msg-reply-btn" data-name="${escapeHtml(name)}" data-text="${escapeHtml(text)}">↩</button>`+
+`${del}`+
+`</div>`;
+
+// ✅ 답장 버튼 클릭 이벤트
+div.querySelector('.msg-reply-btn').addEventListener('click',()=>{
+  setReply(name, text);
+});
   }
 
   chatMessages.appendChild(div);
@@ -1684,8 +1807,10 @@ async function triggerGameOver(){
   }, 500);
 }  // ← 여기서 끝!
 function showJudgment(text,type){const j=document.createElement('div');j.className=`judgment ${type}`;j.textContent=text;document.body.appendChild(j);setTimeout(()=>j.remove(),750);}
-function flashScreen(color){const f=document.createElement('div');f.className='flash';f.style.background=color;document.body.appendChild(f);setTimeout(()=>f.remove(),250);}
-
+function flashScreen(color){
+  if(!flashEnabled) return;
+  const f=document.createElement('div');f.className='flash';f.style.background=color;document.body.appendChild(f);setTimeout(()=>f.remove(),250);
+}
 /* ══════════════════════════════════════
    리사이즈
 ══════════════════════════════════════ */
@@ -1772,6 +1897,7 @@ async function afterLogin(){
   }
   document.getElementById('playerInfo').textContent='👤 '+currentUser.nickname;
   showOnly('nameModal');
+  initSettingsUI();
   await loadNotice();
   showNoticeIfNeeded();
 }
@@ -1960,6 +2086,36 @@ document.querySelectorAll('.admin-section').forEach(section => {
     section.classList.toggle('collapsed');
   });
 });
+// ===== 답장 기능 =====
+let replyTo = null;
+
+function setReply(name, text) {
+  replyTo = { name, text };
+  const preview = document.getElementById('replyPreview');
+  document.getElementById('replyPreviewText').textContent = `↩ ${name}: ${text}`;
+  preview.classList.add('active');
+  document.getElementById('chatInput')?.focus();
+}
+
+function cancelReply() {
+  replyTo = null;
+  document.getElementById('replyPreview').classList.remove('active');
+  document.getElementById('replyPreviewText').textContent = '';
+}
+
+// ===== 반짝 효과 설정 =====
+let flashEnabled = localStorage.getItem('flashEnabled') !== 'false';
+
+function saveFlashSetting(el) {
+  flashEnabled = el.checked;
+  localStorage.setItem('flashEnabled', String(flashEnabled));
+}
+
+// 설정 화면 열릴 때 토글 상태 반영
+function initSettingsUI() {
+  const tog = document.getElementById('flashToggle');
+  if (tog) tog.checked = flashEnabled;
+}
 </script>
 </body>
 </html>
