@@ -1361,65 +1361,96 @@ document.getElementById('newNicknameInput').addEventListener('keypress',e=>{if(e
 document.getElementById('nicknameModal').addEventListener('click',e=>{if(e.target===document.getElementById('nicknameModal'))closeNicknameModal();});
 
 /* ══════════════════════════════════════
-   관리자
+   관리자 보안
 ══════════════════════════════════════ */
+function requireAdmin(){
+  if(!isAdmin || !currentUser?._admin){
+    showToastMsg('🚫 권한 없음 - 접근 차단됨','#ff0066');
+    document.getElementById('adminPanel').classList.add('hidden');
+    document.getElementById('nameModal').classList.remove('hidden');
+    return false;
+  }
+  return true;
+}
+
+// 관리자 패널 DOM 감시 - 콘솔에서 hidden 제거 시 즉시 차단
+const adminPanelObserver = new MutationObserver(()=>{
+  const panel = document.getElementById('adminPanel');
+  if(!panel.classList.contains('hidden') && !isAdmin){
+    panel.classList.add('hidden');
+    showToastMsg('🚫 불법 접근 감지됨','#ff0066');
+    console.warn('🚨 관리자 패널 무단 접근 차단!');
+  }
+});
+adminPanelObserver.observe(
+  document.getElementById('adminPanel'),
+  { attributes: true, attributeFilter: ['class'] }
+);
+
 document.getElementById('btnAdminPanel').addEventListener('click',()=>{
-  if(!isAdmin)return;
+  if(!requireAdmin()) return;
   document.getElementById('adminPanel').classList.remove('hidden');
   document.getElementById('nameModal').classList.add('hidden');
-  loadAdminRanking();loadAdminChat();loadAdminUsers();
-  loadNotice(); // 공지 현황 로드
+  loadAdminRanking(); loadAdminChat(); loadAdminUsers(); loadNotice();
 });
 document.getElementById('btnAdminBack').addEventListener('click',()=>{
   document.getElementById('adminPanel').classList.add('hidden');
   document.getElementById('nameModal').classList.remove('hidden');
 });
-document.getElementById('btnRefreshAdmin').addEventListener('click',()=>{loadAdminRanking();loadAdminChat();loadAdminUsers();loadNotice();});
-document.getElementById('btnPostNotice').addEventListener('click',postNotice);
-document.getElementById('btnDeleteNotice').addEventListener('click',deleteNotice);
+document.getElementById('btnRefreshAdmin').addEventListener('click',()=>{
+  if(!requireAdmin()) return;
+  loadAdminRanking(); loadAdminChat(); loadAdminUsers(); loadNotice();
+});
+document.getElementById('btnPostNotice').addEventListener('click', postNotice);
+document.getElementById('btnDeleteNotice').addEventListener('click', deleteNotice);
 
 function switchAdminRankTab(tab){
+  if(!requireAdmin()) return;
   adminRankTab=tab;
   document.getElementById('adminRankTabHard').classList.toggle('active',tab==='hard');
   document.getElementById('adminRankTabEasy').classList.toggle('active',tab==='easy');
   loadAdminRanking();
 }
 async function loadAdminRanking(){
-  if(!fbReady)return;
+  if(!requireAdmin()) return;
+  if(!fbReady) return;
   const el=document.getElementById('adminRankList');
   el.innerHTML='<div class="rank-loading">불러오는 중...</div>';
   const col=adminRankTab==='easy'?'scores_easy':'scores';
   try{
     const snap=await db.collection(col).orderBy('score','desc').get();
     if(snap.empty){el.innerHTML='<div style="color:#666;text-align:center;padding:16px;">기록 없음</div>';return;}
-    el.innerHTML='';let i=1;
+    el.innerHTML=''; let i=1;
     snap.forEach(doc=>{
       const d=doc.data();
-      const item=document.createElement('div');item.className='admin-rank-item';
+      const item=document.createElement('div'); item.className='admin-rank-item';
       item.innerHTML=`<span style="color:#ff00ff;width:28px;font-size:0.82rem;font-weight:bold;">#${i++}</span><span class="admin-rank-name">${escapeHtml(d.name)}</span><span class="admin-rank-score">${d.score}F</span><button class="admin-del-btn" onclick="adminDeleteScore('${doc.id}','${escapeHtml(d.name)}','${adminRankTab}')">삭제</button>`;
       el.appendChild(item);
     });
   }catch(e){el.innerHTML='<div style="color:#f66;padding:12px;">오류: '+escapeHtml(e.message)+'</div>';}
 }
 function adminDeleteScore(docId,name,mode='hard'){
+  if(!requireAdmin()) return;
   const col=mode==='easy'?'scores_easy':'scores';
   showConfirm(`"${name}"의 기록을 삭제할까요?`,async()=>{
     await db.collection(col).doc(docId).delete();
-    loadAdminRanking();showToastMsg(`🗑 ${name} 기록 삭제됨`,'#ff0066');
+    loadAdminRanking(); showToastMsg(`🗑 ${name} 기록 삭제됨`,'#ff0066');
   });
 }
 document.getElementById('btnResetAllRanking').addEventListener('click',()=>{
+  if(!requireAdmin()) return;
   showConfirm('⚠️ 모든 플레이어의 기록을 초기화할까요?\n(하드+이지 모두)',async()=>{
     const snap1=await db.collection('scores').get();
     const snap2=await db.collection('scores_easy').get();
     const bt=db.batch();
     snap1.forEach(d=>bt.delete(d.ref));
     snap2.forEach(d=>bt.delete(d.ref));
-    await bt.commit();loadAdminRanking();showToastMsg('⚠️ 전체 랭킹 초기화 완료','#ff0066');
+    await bt.commit(); loadAdminRanking(); showToastMsg('⚠️ 전체 랭킹 초기화 완료','#ff0066');
   },true);
 });
 async function loadAdminChat(){
-  if(!fbReady)return;
+  if(!requireAdmin()) return;
+  if(!fbReady) return;
   const el=document.getElementById('adminChatList');
   el.innerHTML='<div class="rank-loading">불러오는 중...</div>';
   try{
@@ -1429,26 +1460,29 @@ async function loadAdminChat(){
     snap.forEach(doc=>{
       const d=doc.data();
       const ts=d.ts?new Date(d.ts.toMillis()).toLocaleString('ko-KR'):'';
-      const item=document.createElement('div');item.className='admin-chat-item';
+      const item=document.createElement('div'); item.className='admin-chat-item';
       item.innerHTML=`<div class="admin-chat-content"><div class="admin-chat-name">${escapeHtml(d.name)}</div><div class="admin-chat-text">${escapeHtml(d.text)}</div><div class="admin-chat-time">${ts}</div></div><button class="admin-del-btn" onclick="adminDeleteChat('${doc.id}')">삭제</button>`;
       el.appendChild(item);
     });
   }catch(e){el.innerHTML='<div style="color:#f66;padding:12px;">오류</div>';}
 }
 function adminDeleteChat(docId){
+  if(!requireAdmin()) return;
   showConfirm('이 메시지를 삭제할까요?',async()=>{
-    await db.collection('chats').doc(docId).delete();loadAdminChat();
+    await db.collection('chats').doc(docId).delete(); loadAdminChat();
   });
 }
 document.getElementById('btnClearAllChat').addEventListener('click',()=>{
+  if(!requireAdmin()) return;
   showConfirm('⚠️ 모든 채팅 메시지를 삭제할까요?',async()=>{
     const snap=await db.collection('chats').get();
-    const bt=db.batch();snap.forEach(d=>bt.delete(d.ref));
-    await bt.commit();loadAdminChat();showToastMsg('🗑 전체 채팅 삭제 완료','#ff0066');
+    const bt=db.batch(); snap.forEach(d=>bt.delete(d.ref));
+    await bt.commit(); loadAdminChat(); showToastMsg('🗑 전체 채팅 삭제 완료','#ff0066');
   },true);
 });
 async function loadAdminUsers(){
-  if(!fbReady)return;
+  if(!requireAdmin()) return;
+  if(!fbReady) return;
   const el=document.getElementById('adminUserList');
   el.innerHTML='<div class="rank-loading">불러오는 중...</div>';
   try{
@@ -1458,24 +1492,24 @@ async function loadAdminUsers(){
     snap.forEach(doc=>{
       const d=doc.data();
       const ts=d.createdAt?new Date(d.createdAt.toMillis()).toLocaleDateString('ko-KR'):'';
-      const item=document.createElement('div');item.className='admin-rank-item';
+      const item=document.createElement('div'); item.className='admin-rank-item';
       item.innerHTML=`<span class="admin-rank-name"><b style="color:#00ffff;">${escapeHtml(d.nickname||'?')}</b><span style="color:#666;font-size:0.78rem;margin-left:6px;">@${escapeHtml(d.id)}</span></span><span style="color:#444;font-size:0.75rem;margin-right:4px;">${ts}</span><button class="admin-del-btn" onclick="adminDeleteUser('${doc.id}','${escapeHtml(d.nickname)}')">삭제</button>`;
       el.appendChild(item);
     });
   }catch(e){el.innerHTML='<div style="color:#f66;padding:12px;">오류</div>';}
 }
 function adminDeleteUser(docId,nickname){
+  if(!requireAdmin()) return;
   showConfirm(`"${nickname}" 계정을 삭제할까요?\n기록도 함께 삭제됩니다.`,async()=>{
     await db.collection('users').doc(docId).delete();
     const sc1=await db.collection('scores').where('name','==',nickname).get();
     const sc2=await db.collection('scores_easy').where('name','==',nickname).get();
     const bt=db.batch();
-    sc1.forEach(d=>bt.delete(d.ref));sc2.forEach(d=>bt.delete(d.ref));
-    await bt.commit();loadAdminUsers();loadAdminRanking();
+    sc1.forEach(d=>bt.delete(d.ref)); sc2.forEach(d=>bt.delete(d.ref));
+    await bt.commit(); loadAdminUsers(); loadAdminRanking();
     showToastMsg(`🗑 ${nickname} 계정 삭제됨`,'#ff0066');
   },true);
 }
-
 /* ══════════════════════════════════════
    랭킹
 ══════════════════════════════════════ */
