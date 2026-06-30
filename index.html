@@ -1941,12 +1941,14 @@ async function triggerGameOver(){
   const existing = getCurrentRankings(G.mode).find(r=>r.name===G.name);
   const isNewRecord = !existing || score > existing.score;
   
-  saveScore(G.name, score, G.mode).then(()=>{
-    renderRanking('gameoverRankingList', 20, G.mode);
-    const myRankEl = document.getElementById('myRankBadge');
-    const myRank2 = getMyRank(G.name, G.mode);
-    if(myRank2){ myRankEl.style.display='block'; myRankEl.textContent=`🎯 현재 내 순위: ${myRank2}위`; }
-  });
+  // ✅ 수정 코드
+const tokenToUse = _gameToken; // 토큰을 미리 변수에 저장
+saveScore(G.name, score, G.mode, tokenToUse).then(()=>{
+  renderRanking('gameoverRankingList', 20, G.mode);
+  const myRankEl = document.getElementById('myRankBadge');
+  const myRank2 = getMyRank(G.name, G.mode);
+  if(myRank2){ myRankEl.style.display='block'; myRankEl.textContent=`🎯 현재 내 순위: ${myRank2}위`; }
+});
   
   if(fbReady && isNewRecord && score >= 10){
     const modeStr = G.mode==='easy' ? '🟢 이지' : '🔴 하드';
