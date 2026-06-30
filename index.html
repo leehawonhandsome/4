@@ -998,6 +998,55 @@ body { display:flex; justify-content:center; align-items:center; }
 </div>
 
 <script>
+  // ✅ isAdmin 콘솔 직접 수정 차단
+(function(){
+  let _isAdmin = false;
+  let _gameToken = null;
+  let _gameStartTime = 0;
+
+  Object.defineProperty(window, 'isAdmin', {
+    get(){ return _isAdmin; },
+    set(v){
+      // 내부 스택 검증
+      const stack = new Error().stack || '';
+      const isInternal = stack.includes('doLogin') || stack.includes('afterLogin') || stack.includes('doLogout');
+      if(isInternal){ _isAdmin = v; }
+      else{
+        console.warn('🚨 보안 경고: isAdmin 외부 수정 차단됨');
+        // 불법 접근 시 관리자 패널 강제 숨김
+        const panel = document.getElementById('adminPanel');
+        if(panel) panel.classList.add('hidden');
+      }
+    },
+    configurable: false // 재정의 불가
+  });
+
+  Object.defineProperty(window, '_gameToken', {
+    get(){ return _gameToken; },
+    set(v){
+      const stack = new Error().stack || '';
+      const isInternal = stack.includes('startGame') || stack.includes('saveScore') || stack.includes('triggerGameOver');
+      if(isInternal){ _gameToken = v; }
+      else{
+        console.warn('🚨 보안 경고: _gameToken 외부 수정 차단됨');
+        _gameToken = null; // 위조 시 null로 강제
+      }
+    },
+    configurable: false
+  });
+
+  Object.defineProperty(window, '_gameStartTime', {
+    get(){ return _gameStartTime; },
+    set(v){
+      const stack = new Error().stack || '';
+      if(stack.includes('startGame')){ _gameStartTime = v; }
+      else{
+        console.warn('🚨 보안 경고: _gameStartTime 외부 수정 차단됨');
+      }
+    },
+    configurable: false
+  });
+})();
 /* ══════════════════════════════════════
    CONFIG & GLOBALS
 ══════════════════════════════════════ */
@@ -1040,7 +1089,11 @@ const FIREBASE_CONFIG = {
   messagingSenderId:"645822007153",
   appId:"1:645822007153:web:33f180b5d45685be9e18d0"
 };
-const ADMIN_ID='leehawon0728', ADMIN_PW='asdfghjkl1!@', ADMIN_NICKNAME='이하원(관리자)';
+// ✅ 수정 (해시만 저장, 평문 제거)
+const ADMIN_ID = 'leehawon0728';
+const ADMIN_NICKNAME = '이하원(관리자)';
+// 위에서 콘솔로 구한 해시값을 여기에 붙여넣기
+const ADMIN_PW_HASH = '1817a52390e619c262d77a1b2e0cc52b3184948600f4689fee06defd017306b1';
 let db=null, fbReady=false, rankUnsubHard=null, rankUnsubEasy=null, chatUnsub=null;
 let isAdmin=false, currentUser=null;
 let currentRankTab='hard', currentMiniRankTab='hard', adminRankTab='hard';
@@ -1252,44 +1305,49 @@ async function doSignup(){
     btn.disabled=false;
   }
 }
+// ✅ doLogin 전체 수정본
 async function doLogin(){
-  const id=document.getElementById('loginId').value.trim();
-  const pw=document.getElementById('loginPw').value;
-  if(!id){setAuthMsg('아이디를 입력해주세요.');return;}
-  if(!pw){setAuthMsg('비밀번호를 입력해주세요.');return;}
-  const btn=document.getElementById('btnLogin'); btn.disabled=true;
-  setAuthMsg('⏳ 로그인 중...','loading');
-  if(id===ADMIN_ID){
-    if(pw!==ADMIN_PW){setAuthMsg('아이디 또는 비밀번호가 틀렸습니다.');btn.disabled=false;return;}
-    currentUser={id:ADMIN_ID,nickname:ADMIN_NICKNAME,docId:'admin',_admin:true};
-    isAdmin=true;
-    try{sessionStorage.setItem('srUser',JSON.stringify(currentUser));}catch(e){}
-    btn.disabled=false;setAuthMsg('');afterLogin();return;
+  const id = document.getElementById('loginId').value.trim();
+  const pw = document.getElementById('loginPw').value;
+  if(!id){ setAuthMsg('아이디를 입력해주세요.'); return; }
+  if(!pw){ setAuthMsg('비밀번호를 입력해주세요.'); return; }
+  const btn = document.getElementById('btnLogin');
+  btn.disabled = true;
+  setAuthMsg('⏳ 로그인 중...', 'loading');
+
+  // 관리자 로그인
+  if(id === ADMIN_ID){
+    const inputHash = await hashPw(pw);
+    if(inputHash !== ADMIN_PW_HASH){
+      setAuthMsg('아이디 또는 비밀번호가 틀렸습니다.');
+      btn.disabled = false;
+      return;
+    }
+    currentUser = { id:ADMIN_ID, nickname:ADMIN_NICKNAME, docId:'admin', _admin:true };
+    isAdmin = true;
+    try{ sessionStorage.setItem('srUser', JSON.stringify(currentUser)); }catch(e){}
+    btn.disabled = false;
+    setAuthMsg('');
+    afterLogin();
+    return;
   }
-  if(!fbReady){setAuthMsg('서버에 연결되지 않았습니다.');btn.disabled=false;return;}
+
+  // 일반 유저 로그인
+  if(!fbReady){ setAuthMsg('서버에 연결되지 않았습니다.'); btn.disabled=false; return; }
   try{
-    const snap=await db.collection('users').where('id','==',id).limit(1).get();
-    if(snap.empty){setAuthMsg('아이디 또는 비밀번호가 틀렸습니다.');btn.disabled=false;return;}
-    const doc=snap.docs[0],data=doc.data();
-    const pwHash=await hashPw(pw);
-    if(data.pwHash!==pwHash){setAuthMsg('아이디 또는 비밀번호가 틀렸습니다.');btn.disabled=false;return;}
-    currentUser={id:data.id,nickname:data.nickname,docId:doc.id};
-    try{sessionStorage.setItem('srUser',JSON.stringify(currentUser));}catch(e){}
-    btn.disabled=false;setAuthMsg('');afterLogin();
+    const snap = await db.collection('users').where('id','==',id).limit(1).get();
+    if(snap.empty){ setAuthMsg('아이디 또는 비밀번호가 틀렸습니다.'); btn.disabled=false; return; }
+    const doc = snap.docs[0], data = doc.data();
+    const pwHash = await hashPw(pw);
+    if(data.pwHash !== pwHash){ setAuthMsg('아이디 또는 비밀번호가 틀렸습니다.'); btn.disabled=false; return; }
+    currentUser = { id:data.id, nickname:data.nickname, docId:doc.id };
+    try{ sessionStorage.setItem('srUser', JSON.stringify(currentUser)); }catch(e){}
+    btn.disabled=false; setAuthMsg(''); afterLogin();
   }catch(e){
     if(e.code==='permission-denied') setAuthMsg('⚠️ Firebase 보안 규칙을 설정해주세요.');
     else setAuthMsg('오류: '+(e.message||'다시 시도해주세요.'));
     btn.disabled=false;
   }
-}
-function tryAutoLogin(){
-  try{
-    const saved=sessionStorage.getItem('srUser');
-    if(!saved)return;
-    const u=JSON.parse(saved);
-    if(!u||!u.id||!u.nickname)return;
-    currentUser=u;if(u._admin)isAdmin=true;afterLogin();
-  }catch(e){try{sessionStorage.removeItem('srUser');}catch(e2){}}
 }
 async function afterLogin(){
   G.name=currentUser.nickname; G.uid=currentUser.docId;
@@ -2363,5 +2421,21 @@ function initSettingsUI() {
   if (tog) tog.checked = flashEnabled;
 }
 </script>
+// ✅ DevTools 열림 감지 시 경고
+(function devtoolsGuard(){
+  let devOpen = false;
+  const threshold = 160;
+  setInterval(()=>{
+    const widthDiff  = window.outerWidth  - window.innerWidth  > threshold;
+    const heightDiff = window.outerHeight - window.innerHeight > threshold;
+    if((widthDiff || heightDiff) && !devOpen){
+      devOpen = true;
+      if(!isAdmin){
+        showToastMsg('⚠️ 개발자 도구 사용이 감지되었습니다','#ff0066');
+      }
+    }
+    if(!widthDiff && !heightDiff) devOpen = false;
+  }, 1000);
+})();
 </body>
 </html>
